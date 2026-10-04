@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Card Cycle">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Card Cycle</title>
+<style>
+:root{
+  --bg:#f3f1ec; --surface:#ffffff; --surface-2:#f7f5f0; --text:#1b1d21; --muted:#686c73; --line:#e3dfd6;
+  --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#dcefeb;
+  --good:#15803d; --good-soft:#e3f3e7; --warn:#b45309; --warn-soft:#fbefdc; --bad:#b91c1c; --bad-soft:#fbe5e3;
+  --radius:18px; --shadow:0 1px 2px rgba(20,20,20,.05),0 4px 14px rgba(20,20,20,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111315; --surface:#1a1d21; --surface-2:#22262b; --text:#eceef0; --muted:#9aa1a9; --line:#2d3238;
+    --accent:#2dd4bf; --accent-ink:#06201d; --accent-soft:#12332f;
+    --good:#4ade80; --good-soft:#123020; --warn:#fbbf24; --warn-soft:#33270e; --bad:#f87171; --bad-soft:#3a1717;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num,.big,.val,.cyc-total,.amt{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 96px)}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
+header.top h1{font-size:28px;letter-spacing:-.02em;margin:0;font-weight:700}
+.switch{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 30px 7px 14px;font-size:14px;font-weight:600;max-width:55%;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.pill{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 12px;box-shadow:var(--shadow)}
+.label{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--muted)} .small{font-size:13px} .center{text-align:center}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.cycle-head{margin:2px 2px 12px}
+.cycle-range{font-size:20px;font-weight:650;letter-spacing:-.01em;margin:2px 0}
+.big{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:6px 0 2px}
+.meter{position:relative;height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin:14px 0 8px;border:1px solid var(--line)}
+.meter>span{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:999px}
+.meter>span.good{background:var(--good)} .meter>span.warn{background:var(--warn)} .meter>span.bad{background:var(--bad)}
+.meter>i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text);opacity:.55}
+.legend{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2 .card{margin:0}
+.grid2{margin-bottom:12px}
+.stat .val{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px}
+.stat .sub{font-size:13px;color:var(--muted)}
+.up{color:var(--bad)} .down{color:var(--good)}
+.status{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:15px}
+.status.good{background:var(--good-soft)} .status.warn{background:var(--warn-soft)} .status.bad{background:var(--bad-soft)}
+.status b{font-weight:650}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:var(--accent)}
+.status.good .dot{background:var(--good)} .status.warn .dot{background:var(--warn)} .status.bad .dot{background:var(--bad)}
+.rows{margin-top:6px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+.row:first-child{border-top:0}
+.row .k{color:var(--muted)} .row .v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.bars{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:78px 1fr 84px;align-items:center;gap:8px;font-size:13px}
+.bar .t{height:14px;background:var(--surface-2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar .t>span{display:block;height:100%;background:var(--accent);border-radius:5px}
+.bar .t>span.bad{background:var(--bad)}
+.bar .amt{text-align:right;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.block{width:100%;font-size:17px;min-height:52px;border-radius:14px}
+.btn.danger{color:var(--bad)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--accent);padding:8px 6px;min-height:36px}
+.btn:active{transform:scale(.985)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.next{margin:10px 0 18px;font-size:14px}
+.nudge{border-color:var(--accent);background:var(--accent-soft)}
+.nudge p{margin:4px 0 8px}
+/* forms */
+label.f{display:block;margin:12px 0 0;font-size:14px;font-weight:600}
+label.f input,label.f select{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:17px;font-weight:500}
+label.f input:focus,label.f select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.hint{font-size:13px;color:var(--muted);margin-top:6px;font-weight:400}
+.hint.strong{color:var(--warn)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;margin-top:12px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px 6px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.preview{margin-top:14px;padding:12px;border-radius:12px;background:var(--accent-soft);font-size:15px;min-height:46px}
+.preview b{font-size:20px}
+/* sheet */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 20px);animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+.sheet header{display:flex;justify-content:space-between;align-items:center}
+.sheet h2{margin:0;font-size:20px}
+/* history */
+.chart{display:flex;align-items:flex-end;gap:8px;height:170px;overflow-x:auto;padding:22px 2px 0;margin-top:6px}
+.col{flex:1 0 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.col .cv{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.col .cb{width:100%;max-width:44px;background:var(--accent);border-radius:6px 6px 2px 2px;min-height:2px}
+.col .cb.live{background:transparent;border:2px dashed var(--accent)}
+.col .cl{font-size:11px;color:var(--muted);white-space:nowrap}
+details.cyc{padding:0}
+details.cyc summary{list-style:none;display:flex;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer}
+details.cyc summary::-webkit-details-marker{display:none}
+.cyc-range{font-weight:650}
+.cyc-total{font-size:20px;font-weight:700;text-align:right;white-space:nowrap}
+.cyc-body{padding:0 16px 12px}
+.ci{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.ci .d{font-weight:600}.ci .n{font-size:12px;color:var(--muted)}
+.ci .amt{text-align:right;font-weight:600}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:1px}
+.badge.final{background:var(--good-soft);color:var(--good);border-color:transparent}
+.badge.live{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.empty{text-align:center;padding:28px 16px}
+.empty h2{margin:6px 0;font-size:20px}
+ol.steps{padding-left:20px;margin:8px 0} ol.steps li{margin:6px 0}
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);z-index:40}
+nav.tabs .in{display:flex;max-width:560px;width:100%}
+nav.tabs button{flex:1;border:0;background:transparent;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button.on{color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.banner{background:var(--warn-soft);border:1px solid transparent}
+.banner p{margin:4px 0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><h1 id="title">Card Cycle</h1><div id="switchWrap"></div></header>
+  <main id="main"></main>
+</div>
+<nav class="tabs hidden" id="tabs"><div class="in">
+  <button data-act="tab" data-tab="now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>This cycle</button>
+  <button data-act="tab" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>History</button>
+  <button data-act="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</button>
+</div></nav>
+<div id="sheetRoot"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="hidden">
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var KEY = 'cardcycle.v1';
+
+/* ---------- small helpers ---------- */
+function $(s, r){ return (r || document).querySelector(s); }
+function pad(n){ return String(n).padStart(2, '0'); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function round2(n){ return Math.round(n * 100) / 100; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+var F2 = new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD'});
+var FC = new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD', notation:'compact', maximumFractionDigits:1});
+function money(n){ return F2.format(n || 0); }
+function moneyC(n){ return FC.format(n || 0); }
+function signed(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + money(Math.abs(n)); }
+function parseMoney(s){
+  if (s == null) return NaN;
+  var t = String(s).replace(/[$,\s]/g, '').replace(/^−/, '-');
+  if (t === '' || t === '-' || t === '.') return NaN;
+  return Number(t);
+}
+function ord(n){ var s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+
+/* ---------- dates (local, YYYY-MM-DD strings) ---------- */
+function ymd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parseYmd(s){ var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function todayStr(){ return ymd(new Date()); }
+function dim(y, m){ return new Date(y, m + 1, 0).getDate(); }
+function daysBetween(a, b){ return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); }
+function addDays(d, n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+function toD(d){ return typeof d === 'string' ? parseYmd(d) : d; }
+function fmtD(d){ return toD(d).toLocaleDateString('en-CA', {month:'short', day:'numeric'}); }
+function fmtDW(d){ return toD(d).toLocaleDateString('en-CA', {weekday:'short', month:'short', day:'numeric'}); }
+
+/* The statement cycle containing dateStr. startDay = first day of each cycle (e.g. 10 => 10th..9th).
+   Days past the end of a short month clamp to that month's last day. */
+function cycleFor(dateStr, startDay){
+  var d = parseYmd(dateStr), y = d.getFullYear(), m = d.getMonth();
+  if (d.getDate() < Math.min(startDay, dim(y, m))) { m--; if (m < 0) { m = 11; y--; } }
+  var start = new Date(y, m, Math.min(startDay, dim(y, m)));
+  var ny = y, nm = m + 1; if (nm > 11) { nm = 0; ny++; }
+  var end = addDays(new Date(ny, nm, Math.min(startDay, dim(ny, nm))), -1);
+  return { key: ymd(start), start: start, end: end, days: daysBetween(start, end) + 1 };
+}
+function cycleLabel(c){ return fmtD(c.start) + ' – ' + fmtD(c.end) + ', ' + c.end.getFullYear(); }
+function prevCycle(c, startDay){ return cycleFor(ymd(addDays(c.start, -1)), startDay); }
+
+/* ---------- state ---------- */
+function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], ui:{ hideInstall:false, skipFinal:{} } }; }
+function normalize(s){
+  var b = blank();
+  if (!s || typeof s !== 'object') return b;
+  b.cards = Array.isArray(s.cards) ? s.cards : [];
+  b.checkins = Array.isArray(s.checkins) ? s.checkins : [];
+  b.activeCardId = s.activeCardId || null;
+  b.ui = Object.assign(b.ui, s.ui || {});
+  if (!b.ui.skipFinal) b.ui.skipFinal = {};
+  return b;
+}
+var storageOK = true;
+function load(){
+  try {
+    localStorage.setItem(KEY + '.test', '1'); localStorage.removeItem(KEY + '.test');
+    var raw = localStorage.getItem(KEY);
+    if (raw) return normalize(JSON.parse(raw));
+  } catch (e) { storageOK = false; }
+  return blank();
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; }
+  catch (e) { storageOK = false; toast("Couldn't save on this device"); }
+}
+var state = load();
+var view = 'now';
+
+function activeCard(){
+  var c = state.cards.find(function(x){ return x.id === state.activeCardId; });
+  if (!c && state.cards.length) { c = state.cards[0]; state.activeCardId = c.id; }
+  return c || null;
+}
+
+/* ---------- check-in math ----------
+   A check-in stores what you read off your card app:
+     mode 'available' -> value = available credit;  mode 'balance' -> value = current balance
+   plus `carried` = part of the balance that is NOT this cycle's spending (unpaid previous statement).
+   Spent this cycle = (limit - available  OR  balance) - carried                                   */
+function spentOf(c){ var base = c.mode === 'balance' ? c.value : (c.limit - c.value); return round2(base - (c.carried || 0)); }
+function availOf(c){ return c.mode === 'balance' ? round2(c.limit - c.value) : c.value; }
+function sortCI(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.created || 0) - (b.created || 0); }
+function cardCheckins(card){ return state.checkins.filter(function(c){ return c.cardId === card.id; }).sort(sortCI); }
+function inCycle(card, key){ return cardCheckins(card).filter(function(c){ return cycleFor(c.date, card.startDay).key === key; }); }
+function withDeltas(list){
+  var prev = null;
+  return list.map(function(c){
+    var s = spentOf(c), first = prev === null, d = first ? s : round2(s - prev);
+    prev = s;
+    return { c:c, spent:s, delta:d, first:first };
+  });
+}
+function cyclesOf(card){
+  var map = {}, order = [];
+  cardCheckins(card).forEach(function(c){
+    var cy = cycleFor(c.date, card.startDay);
+    if (!map[cy.key]) { map[cy.key] = { cycle:cy, list:[] }; order.push(cy.key); }
+    map[cy.key].list.push(c);
+  });
+  return order.sort().reverse().map(function(k){ return map[k]; });
+}
+function nextSunday(fromStr, latestDate){
+  var t = parseYmd(fromStr);
+  if (t.getDay() === 0 && latestDate !== fromStr) return 'today';
+  return fmtDW(addDays(t, 7 - t.getDay()));
+}
+
+/* ---------- views ---------- */
+function render(){
+  var card = activeCard();
+  var main = $('#main');
+  renderSwitch(card);
+  if (!card) { $('#tabs').classList.add('hidden'); main.innerHTML = onboardingHTML(); wireCardForm(); return; }
+  $('#tabs').classList.remove('hidden');
+  document.querySelectorAll('nav.tabs button').forEach(function(b){ b.classList.toggle('on', b.dataset.tab === view); });
+  if (view === 'history') main.innerHTML = historyHTML(card);
+  else if (view === 'settings') { main.innerHTML = settingsHTML(card); wireCardForm(); }
+  else main.innerHTML = nowHTML(card);
+  window.scrollTo(0, 0);
+}
+
+function renderSwitch(card){
+  var w = $('#switchWrap');
+  if (!card) { w.innerHTML = ''; return; }
+  if (state.cards.length > 1) {
+    w.innerHTML = '<select class="switch" id="cardSwitch" aria-label="Card">' + state.cards.map(function(c){
+      return '<option value="' + c.id + '"' + (c.id === card.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>';
+  } else w.innerHTML = '<span class="pill">' + esc(card.name) + '</span>';
+}
+
+function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function isStandalone(){ return window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); }
+
+function installBanner(){
+  if (!storageOK) return '<section class="card banner"><b>Storage is blocked here.</b><p class="small">Check-ins can\'t be saved in this browser mode (Private Browsing blocks it). Open the app from your Home Screen icon.</p></section>';
+  if (!isIOS() || isStandalone() || state.ui.hideInstall) return '';
+  return '<section class="card banner"><b>Install it first</b><p class="small">In Safari tap <b>Share</b> → <b>Add to Home Screen</b>, then open Card Cycle from that icon. The installed app keeps its own data, separate from Safari, so start your check-ins there.</p>' +
+    '<button class="btn ghost" data-act="hideInstall">Dismiss</button></section>';
+}
+
+function finalNudge(card, cyc, today){
+  var pc = prevCycle(cyc, card.startDay), endStr = ymd(pc.end);
+  var dayN = daysBetween(cyc.start, parseYmd(today)) + 1;
+  if (dayN > 7 || state.ui.skipFinal[card.id + pc.key]) return '';
+  var list = inCycle(card, pc.key);
+  if (!list.length || list.some(function(c){ return c.date === endStr; })) return '';
+  var last = list[list.length - 1];
+  return '<section class="card nudge"><b>' + esc(cycleLabel(pc)) + ' has closed</b>' +
+    '<p class="small">Your last check-in for it was ' + fmtDW(last.date) + ', so the final few days aren\'t counted. Add a check-in dated ' + fmtD(pc.end) + ' to lock in the final total — your statement has the numbers.</p>' +
+    '<div class="btnrow"><button class="btn primary" data-act="checkin" data-date="' + endStr + '">Add final for ' + fmtD(pc.end) + '</button>' +
+    '<button class="btn ghost" data-act="skipFinal" data-key="' + card.id + pc.key + '">Skip</button></div></section>';
+}
+
+function nowHTML(card){
+  var today = todayStr(), t = parseYmd(today);
+  var cyc = cycleFor(today, card.startDay);
+  var list = withDeltas(inCycle(card, cyc.key));
+  var latest = list[list.length - 1];
+  var dayN = daysBetween(cyc.start, t) + 1, left = cyc.days - dayN;
+  var h = installBanner() + finalNudge(card, cyc, today);
+
+  h += '<section class="cycle-head"><div class="eyebrow">Current cycle</div><div class="cycle-range">' + esc(cycleLabel(cyc)) + '</div>' +
+       '<div class="muted small">Day ' + dayN + ' of ' + cyc.days + ' · ' + left + ' day' + (left === 1 ? '' : 's') + ' left · statement closes ' + fmtDW(cyc.end) + '</div></section>';
+
+  var pc = prevCycle(cyc, card.startDay), pList = withDeltas(inCycle(card, pc.key)), pLast = pList[pList.length - 1];
+
+  if (!latest) {
+    h += '<section class="card empty"><div class="eyebrow">No check-in yet</div><h2>How much have you spent since ' + fmtD(cyc.start) + '?</h2>' +
+         '<p class="muted small">Open your card app, note your available credit (or current balance), and log it here.</p></section>';
+    if (pLast) h += '<section class="card"><div class="label">Last cycle</div><div class="rows"><div class="row"><span class="k">' + esc(cycleLabel(pc)) + '</span><span class="v">' + money(pLast.spent) + '</span></div></div></section>';
+  } else {
+    var spent = latest.spent, c = latest.c, limit = c.limit;
+    var asOf = parseYmd(c.date), dayOfLatest = Math.max(1, daysBetween(cyc.start, asOf) + 1);
+    var daysAfter = Math.max(0, daysBetween(asOf, cyc.end));
+    var util = limit > 0 ? spent / limit : 0;
+    var target = card.target > 0 ? card.target : 0;
+    var tone = '';
+    if (target) {
+      var expected = target * dayOfLatest / cyc.days;
+      tone = spent <= expected ? 'good' : spent <= expected * 1.1 ? 'warn' : 'bad';
+    }
+    h += '<section class="card"><div class="label">Spent this cycle</div><div class="big">' + money(spent) + '</div>' +
+         '<div class="muted small">as of ' + fmtDW(c.date) + (c.note ? ' · ' + esc(c.note) : '') + '</div>' +
+         '<div class="meter" role="img" aria-label="' + Math.round(util * 100) + '% of limit"><span class="' + tone + '" style="width:' + Math.max(0, Math.min(100, util * 100)) + '%"></span>' +
+         (target && limit ? '<i style="left:' + Math.min(100, target / limit * 100) + '%" title="Target"></i>' : '') + '</div>' +
+         '<div class="legend"><span>' + Math.round(util * 100) + '% of ' + money(limit) + ' limit</span><span>' + money(availOf(c)) + ' available</span></div></section>';
+
+    /* this week vs previous week */
+    var wk = latest, pw = list.length > 1 ? list[list.length - 2] : null;
+    var weekSub = wk.first ? 'since cycle start (' + fmtD(cyc.start) + ')' : 'since ' + fmtDW(pw.c.date);
+    var prevBox;
+    if (pw && !pw.first) {
+      var diff = round2(wk.delta - pw.delta);
+      prevBox = '<div class="val">' + money(pw.delta) + '</div><div class="sub">' +
+        (diff === 0 ? 'same as this week' : '<span class="' + (diff > 0 ? 'up' : 'down') + '">' + (diff > 0 ? '▲ ' : '▼ ') + money(Math.abs(diff)) + '</span> ' + (diff > 0 ? 'more' : 'less') + ' this week') + '</div>';
+    } else if (pw && pw.first) {
+      prevBox = '<div class="val">' + money(pw.delta) + '</div><div class="sub">' + fmtD(cyc.start) + ' → ' + fmtD(pw.c.date) + '</div>';
+    } else if (pLast) {
+      var avgWk = pLast.spent / (pc.days / 7);
+      prevBox = '<div class="val">' + money(avgWk) + '</div><div class="sub">avg week last cycle</div>';
+    } else prevBox = '<div class="val muted">—</div><div class="sub">after your next check-in</div>';
+    h += '<section class="grid2"><div class="card stat"><div class="label">This week</div><div class="val">' + signed(wk.delta) + '</div><div class="sub">' + weekSub + '</div></div>' +
+         '<div class="card stat"><div class="label">' + (pw ? 'Week before' : 'For reference') + '</div>' + prevBox + '</div></section>';
+
+    /* plan */
+    var projected = spent / dayOfLatest * cyc.days;
+    h += '<section class="card"><div class="label">' + (target ? 'Cycle target · ' + money(target) : 'Where this is heading') + '</div>';
+    if (target) {
+      var remaining = round2(target - spent), baseWk = target * 7 / cyc.days;
+      var ahead = round2(expected - spent);
+      if (tone === 'good') h += '<div class="status good"><span class="dot"></span><div><b>' + money(ahead) + ' under pace.</b> By ' + fmtD(c.date) + ' you\'d planned to spend about ' + money(expected) + '.</div></div>';
+      else h += '<div class="status ' + tone + '"><span class="dot"></span><div><b>' + money(-ahead) + ' over pace.</b> By ' + fmtD(c.date) + ' you\'d planned to spend about ' + money(expected) + '.</div></div>';
+      h += '<div class="rows">';
+      if (remaining <= 0) h += '<div class="row"><span class="k">Over target by</span><span class="v up">' + money(-remaining) + '</span></div>';
+      else if (daysAfter >= 7) h += '<div class="row"><span class="k">To stay on target, keep each week under</span><span class="v">' + money(remaining / (daysAfter / 7)) + '</span></div>' +
+                                    '<div class="row"><span class="k">Left to spend this cycle</span><span class="v">' + money(remaining) + '</span></div>';
+      else h += '<div class="row"><span class="k">Left to spend before ' + fmtD(cyc.end) + '</span><span class="v">' + money(remaining) + '</span></div>';
+      h += '<div class="row"><span class="k">Even weekly budget</span><span class="v">' + money(baseWk) + '</span></div>';
+      h += '<div class="row"><span class="k">At this pace you\'ll finish near</span><span class="v">' + money(projected) + '</span></div></div>';
+    } else {
+      h += '<div class="rows"><div class="row"><span class="k">At this pace you\'ll finish near</span><span class="v">' + money(projected) + '</span></div>' +
+           '<div class="row"><span class="k">Daily average so far</span><span class="v">' + money(spent / dayOfLatest) + '</span></div>' +
+           (pLast ? '<div class="row"><span class="k">Last cycle total</span><span class="v">' + money(pLast.spent) + '</span></div>' : '') + '</div>' +
+           '<p class="small muted" style="margin:10px 0 0">Set a cycle target in Settings to get a weekly limit that adjusts after each check-in.</p>';
+    }
+    h += '</section>';
+
+    /* week-by-week */
+    var maxD = Math.max.apply(null, list.map(function(x){ return Math.max(0, x.delta); }).concat([1]));
+    var baseW = target ? target * 7 / cyc.days : 0;
+    h += '<section class="card"><div class="label">Week by week</div><div class="bars">' + list.map(function(x){
+      var w = Math.max(0, x.delta) / maxD * 100;
+      return '<div class="bar"><span class="muted">' + fmtD(x.c.date) + '</span><div class="t"><span class="' + (baseW && x.delta > baseW * (x.first ? (daysBetween(cyc.start, parseYmd(x.c.date)) + 1) / 7 : 1) ? 'bad' : '') + '" style="width:' + w + '%"></span></div><span class="amt">' + signed(x.delta) + '</span></div>';
+    }).join('') + '</div></section>';
+  }
+
+  h += '<button class="btn primary block" data-act="checkin">Weekly check-in</button>' +
+       '<p class="next muted center">Next check-in: ' + nextSunday(today, latest ? latest.c.date : null) + '</p>';
+  return h;
+}
+
+function historyHTML(card){
+  var cycles = cyclesOf(card);
+  if (!cycles.length) return '<section class="card empty"><h2>No history yet</h2><p class="muted small">Each statement cycle shows up here once you\'ve logged a check-in for it.</p></section>';
+  var curKey = cycleFor(todayStr(), card.startDay).key;
+  var chrono = cycles.slice().reverse();
+  var totals = chrono.map(function(g){ var w = withDeltas(g.list); return w[w.length - 1].spent; });
+  var max = Math.max.apply(null, totals.concat([1]));
+  var h = '<section class="card"><div class="label">Spending per cycle</div><div class="chart">' + chrono.map(function(g, i){
+    var live = g.cycle.key === curKey;
+    return '<div class="col"><span class="cv">' + moneyC(totals[i]) + '</span><div class="cb' + (live ? ' live' : '') + '" style="height:' + Math.max(2, Math.max(0, totals[i]) / max * 110) + 'px"></div>' +
+      '<span class="cl">' + g.cycle.start.toLocaleDateString('en-CA', {month:'short'}) + (g.cycle.start.getMonth() === 0 || i === 0 ? " '" + String(g.cycle.start.getFullYear()).slice(2) : '') + '</span></div>';
+  }).join('') + '</div><p class="small muted" style="margin:8px 0 0">Bars are labelled by the month each cycle starts. Dashed = cycle in progress.</p></section>';
+
+  h += cycles.map(function(g){
+    var w = withDeltas(g.list), last = w[w.length - 1], live = g.cycle.key === curKey;
+    var isFinal = last.c.date === ymd(g.cycle.end);
+    var util = last.c.limit > 0 ? Math.round(last.spent / last.c.limit * 100) : 0;
+    var tgt = last.c.target > 0 ? last.c.target : 0;
+    var badge = live ? '<span class="badge live">In progress</span>' : isFinal ? '<span class="badge final">Final</span>' : '<span class="badge">as of ' + fmtD(last.c.date) + '</span>';
+    return '<details class="card cyc"' + (live ? ' open' : '') + '><summary><div><div class="cyc-range">' + esc(cycleLabel(g.cycle)) + badge + '</div>' +
+      '<div class="muted small">' + w.length + ' check-in' + (w.length === 1 ? '' : 's') + ' · ' + util + '% of limit' + (tgt ? ' · target ' + money(tgt) : '') + '</div></div>' +
+      '<div class="cyc-total">' + money(last.spent) + (tgt ? '<div class="small ' + (last.spent > tgt ? 'up' : 'down') + '">' + (last.spent > tgt ? money(last.spent - tgt) + ' over' : money(tgt - last.spent) + ' under') + '</div>' : '') + '</div></summary>' +
+      '<div class="cyc-body">' + w.map(function(x){
+        return '<div class="ci"><div><div class="d">' + fmtDW(x.c.date) + '</div><div class="n">' + (x.c.mode === 'balance' ? 'Balance ' : 'Available ') + money(x.c.value) + (x.c.carried ? ' · less ' + money(x.c.carried) + ' prior' : '') + (x.c.note ? ' · ' + esc(x.c.note) : '') + '</div></div>' +
+          '<div class="amt">' + money(x.spent) + '<div class="n">' + (x.first ? 'first' : signed(x.delta)) + '</div></div>' +
+          '<button class="btn ghost" data-act="edit" data-id="' + x.c.id + '" aria-label="Edit">Edit</button></div>';
+      }).join('') + '<button class="btn ghost" data-act="checkin" data-date="' + (live ? todayStr() : ymd(g.cycle.end)) + '">+ Add check-in to this cycle</button></div></details>';
+  }).join('');
+  return h;
+}
+
+function cardFields(c){
+  c = c || { name:'', limit:'', startDay:10, target:'', mode:'available' };
+  return '<label class="f">Card name<input name="name" value="' + esc(c.name) + '" placeholder="e.g. Amex Cobalt" maxlength="40" required></label>' +
+    '<label class="f">Credit limit<input name="limit" inputmode="decimal" value="' + (c.limit === '' ? '' : c.limit) + '" placeholder="5000" required></label>' +
+    '<label class="f">Cycle starts on day<input name="startDay" type="number" inputmode="numeric" min="1" max="31" value="' + c.startDay + '" required>' +
+    '<div class="hint" id="cycleHint"></div></label>' +
+    '<label class="f">Cycle spending target <span class="muted">(optional)</span><input name="target" inputmode="decimal" value="' + (c.target ? c.target : '') + '" placeholder="e.g. 2500">' +
+    '<div class="hint">Gives you an on-pace check and a weekly limit that adjusts after each check-in.</div></label>' +
+    '<label class="f">What you\'ll read off your card app<select name="mode"><option value="available"' + (c.mode !== 'balance' ? ' selected' : '') + '>Available credit</option><option value="balance"' + (c.mode === 'balance' ? ' selected' : '') + '>Current balance</option></select></label>';
+}
+function cycleHintText(day){
+  day = Number(day);
+  if (!(day >= 1 && day <= 31)) return 'Enter a day from 1 to 31.';
+  var end = day === 1 ? 'the last day of the month' : ('the ' + ord(day - 1) + ' of the next month');
+  return 'Each cycle runs from the ' + ord(day) + ' to ' + end + (day > 28 ? ' (short months use their last day)' : '') + '.';
+}
+
+function onboardingHTML(){
+  return installBanner() + '<section class="card"><div class="eyebrow">Set up your card</div><h2 style="margin:6px 0 4px">Track spending per statement cycle</h2>' +
+    '<p class="muted small" style="margin:0">Every Sunday you log what your card app shows. Card Cycle works out what you\'ve spent since the cycle started, how this week compares, and keeps every cycle in History.</p>' +
+    '<form data-form="card" data-new="1">' + cardFields(null) + '<button class="btn primary block" style="margin-top:16px">Start tracking</button></form></section>';
+}
+
+function settingsHTML(card){
+  var others = state.cards.length > 1;
+  return '<section class="card"><div class="label">This card</div><form data-form="card">' + cardFields(card) +
+    '<button class="btn primary block" style="margin-top:16px">Save changes</button></form>' +
+    '<p class="small muted" style="margin:10px 0 0">Changing the limit doesn\'t rewrite past check-ins; each one keeps the limit it was logged with.</p></section>' +
+
+    '<section class="card"><div class="label">Cards</div><div class="rows">' + state.cards.map(function(c){
+      return '<div class="row"><span>' + esc(c.name) + ' <span class="muted small">· ' + ord(c.startDay) + ' · ' + money(c.limit) + '</span></span>' +
+        (c.id === card.id ? '<span class="v small muted">Showing</span>' : '<button class="btn ghost" data-act="use" data-id="' + c.id + '">Show</button>') + '</div>';
+    }).join('') + '</div><button class="btn" data-act="addCard" style="margin-top:8px">+ Add another card</button></section>' +
+
+    '<section class="card"><div class="label">Sunday reminder</div><ol class="steps small">' +
+    '<li>Open the <b>Reminders</b> app and add “Card check-in”.</li>' +
+    '<li>Tap ⓘ → turn on <b>Date</b> and <b>Time</b> → pick this Sunday, e.g. 7:00 PM.</li>' +
+    '<li>Set <b>Repeat</b> to <b>Weekly</b>. Done — it nags you every Sunday.</li></ol>' +
+    '<p class="small muted" style="margin:0">Tip: also check in on your statement day for an exact final total.</p></section>' +
+
+    '<section class="card"><div class="label">Backup</div><p class="small muted" style="margin:6px 0 0">Your data lives only on this phone. Removing the Home Screen icon erases it, so export a backup now and then (save it to Files or email it to yourself).</p>' +
+    '<div class="btnrow"><button class="btn" data-act="export">Export backup</button><button class="btn" data-act="exportCsv">Export CSV</button><button class="btn" data-act="import">Restore backup</button></div></section>' +
+
+    '<section class="card"><div class="label">Danger zone</div><div class="btnrow"><button class="btn danger" data-act="deleteCard">Delete ' + esc(card.name) + ' and its history</button></div>' +
+    (others ? '' : '<p class="small muted" style="margin:8px 0 0">This is your only card; deleting it returns you to setup.</p>') + '</section>' +
+    '<p class="small muted center">Card Cycle · ' + state.checkins.length + ' check-ins stored on this device</p>';
+}
+
+/* ---------- card form ---------- */
+function wireCardForm(){
+  var f = document.querySelector('form[data-form="card"]'); if (!f) return;
+  var sd = f.elements.startDay, hint = $('#cycleHint', f);
+  var upd = function(){ hint.textContent = cycleHintText(sd.value); };
+  sd.addEventListener('input', upd); upd();
+}
+function readCardForm(f){
+  var name = f.elements.name.value.trim();
+  var limit = parseMoney(f.elements.limit.value);
+  var startDay = Math.round(Number(f.elements.startDay.value));
+  var target = parseMoney(f.elements.target.value);
+  if (!name) return toast('Give the card a name');
+  if (!(limit > 0)) return toast('Enter your credit limit');
+  if (!(startDay >= 1 && startDay <= 31)) return toast('Cycle day must be 1–31');
+  return { name:name, limit:round2(limit), startDay:startDay, target:target > 0 ? round2(target) : 0, mode:f.elements.mode.value };
+}
+
+/* ---------- check-in sheet ---------- */
+var sheet = null;
+function openCheckin(opts){
+  var card = activeCard(); if (!card) return;
+  var editing = opts.id ? state.checkins.find(function(c){ return c.id === opts.id; }) : null;
+  var date = editing ? editing.date : (opts.date || todayStr());
+  var mode = editing ? editing.mode : (card.mode || 'available');
+  var limit = editing ? editing.limit : card.limit;
+  sheet = { id: editing ? editing.id : null, mode: mode, limit: limit, carriedTouched: !!editing };
+  var root = $('#sheetRoot');
+  root.innerHTML = '<div class="backdrop" data-act="closeBg"><form class="sheet" data-form="checkin" novalidate>' +
+    '<header><h2>' + (editing ? 'Edit check-in' : 'Weekly check-in') + '</h2><button type="button" class="btn ghost" data-act="close">Cancel</button></header>' +
+    '<p class="small muted" style="margin:6px 0 0">' + esc(card.name) + ' · limit ' + money(limit) + '</p>' +
+    '<label class="f">Date<input type="date" name="date" value="' + date + '" max="' + todayStr() + '" required></label>' +
+    '<div class="seg" role="tablist"><button type="button" data-mode="available">Available credit</button><button type="button" data-mode="balance">Current balance</button></div>' +
+    '<label class="f"><span id="valLabel"></span><input name="value" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (editing ? editing.value : '') + '"></label>' +
+    '<label class="f">Unpaid from last statement<input name="carried" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (editing ? (editing.carried || 0) : '') + '">' +
+    '<div class="hint" id="carriedHint"></div></label>' +
+    '<label class="f">Note <span class="muted">(optional)</span><input name="note" maxlength="80" value="' + esc(editing ? editing.note : '') + '" placeholder="e.g. flights for December"></label>' +
+    '<div class="preview" id="preview" aria-live="polite"></div>' +
+    '<button class="btn primary block" style="margin-top:14px">' + (editing ? 'Save changes' : 'Save check-in') + '</button>' +
+    (editing ? '<button type="button" class="btn danger block" data-act="deleteCI" style="margin-top:8px;background:transparent">Delete this check-in</button>' : '') +
+    '</form></div>';
+  document.body.style.overflow = 'hidden';
+  var f = $('form[data-form="checkin"]');
+  f.addEventListener('input', function(e){ if (e.target.name === 'carried') sheet.carriedTouched = true; if (e.target.name === 'date' && !sheet.carriedTouched) defaultCarried(f); updatePreview(f); });
+  f.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ sheet.mode = b.dataset.mode; updatePreview(f); }); });
+  if (!editing) defaultCarried(f);
+  updatePreview(f);
+  setTimeout(function(){ if (!editing) f.elements.value.focus(); }, 250);
+}
+function priorInCycle(card, date, excludeId){
+  var key = cycleFor(date, card.startDay).key;
+  return inCycle(card, key).filter(function(c){ return c.id !== excludeId && c.date <= date; });
+}
+function defaultCarried(f){
+  var card = activeCard(), d = f.elements.date.value || todayStr();
+  var prior = priorInCycle(card, d, sheet.id);
+  f.elements.carried.value = prior.length ? (prior[prior.length - 1].carried || 0) : '';
+  sheet.firstOfCycle = !prior.length;
+}
+function updatePreview(f){
+  var card = activeCard();
+  f.querySelectorAll('.seg button').forEach(function(b){ b.classList.toggle('on', b.dataset.mode === sheet.mode); });
+  $('#valLabel').textContent = sheet.mode === 'balance' ? 'Current balance right now' : 'Available credit right now';
+  var d = f.elements.date.value || todayStr();
+  var prior = priorInCycle(card, d, sheet.id);
+  var cyc = cycleFor(d, card.startDay);
+  var ch = $('#carriedHint');
+  ch.className = 'hint' + (!prior.length ? ' strong' : '');
+  ch.innerHTML = (!prior.length ? 'First check-in for ' + esc(cycleLabel(cyc)) + '. If your last statement isn\'t paid yet, enter that statement balance here so it isn\'t counted as new spending. ' : '') +
+    'Once your statement is paid, this is 0. Paid extra toward this cycle\'s charges? Enter that as a negative number.';
+  var v = parseMoney(f.elements.value.value), carried = parseMoney(f.elements.carried.value);
+  if (isNaN(carried)) carried = 0;
+  var pv = $('#preview');
+  if (isNaN(v)) { pv.innerHTML = '<span class="muted">Spent this cycle will show here.</span>'; return; }
+  var spent = spentOf({ mode:sheet.mode, value:v, limit:sheet.limit, carried:carried });
+  var line = '', dropped = false;
+  if (prior.length) { var p = spentOf(prior[prior.length - 1]); dropped = spent < p; line = signed(round2(spent - p)) + ' since ' + fmtDW(prior[prior.length - 1].date); }
+  else line = 'since the cycle started ' + fmtD(cyc.start);
+  var warn = (sheet.mode === 'available' && v > sheet.limit) ? '<div class="small up">That\'s more than your ' + money(sheet.limit) + ' limit — double-check the number.</div>'
+    : dropped ? '<div class="small" style="color:var(--warn)">Lower than last time. Refunds do this; so does a payment. If you paid toward this cycle\'s charges, enter it as a negative number under “Unpaid from last statement” so your spending stays accurate.</div>' : '';
+  pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b><div class="small muted">' + line + '</div>' + warn;
+}
+function closeSheet(){ $('#sheetRoot').innerHTML = ''; document.body.style.overflow = ''; sheet = null; }
+function saveCheckin(f){
+  var card = activeCard();
+  var d = f.elements.date.value, v = parseMoney(f.elements.value.value), carried = parseMoney(f.elements.carried.value);
+  if (!d) return toast('Pick a date');
+  if (d > todayStr()) return toast("Date can't be in the future");
+  if (isNaN(v) || v < 0) return toast('Enter the amount from your card app');
+  if (isNaN(carried)) carried = 0;
+  var rec;
+  if (sheet.id) rec = state.checkins.find(function(c){ return c.id === sheet.id; });
+  if (!rec) { rec = { id: uid(), cardId: card.id, created: Date.now(), limit: sheet.limit, target: card.target || 0 }; state.checkins.push(rec); }
+  rec.date = d; rec.mode = sheet.mode; rec.value = round2(v); rec.carried = round2(carried); rec.note = f.elements.note.value.trim();
+  save(); closeSheet(); render(); toast('Check-in saved');
+}
+
+/* ---------- backup ---------- */
+function download(name, text, type){
+  var url = URL.createObjectURL(new Blob([text], { type:type }));
+  var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+function shareOrDownload(name, text, type){
+  try {
+    var file = new File([text], name, { type:type });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      return navigator.share({ files:[file], title:name }).catch(function(e){ if (!e || e.name !== 'AbortError') download(name, text, type); });
+    }
+  } catch (e) {}
+  download(name, text, type);
+}
+function exportJSON(){ shareOrDownload('card-cycle-backup-' + todayStr() + '.json', JSON.stringify(state, null, 2), 'application/json'); }
+function exportCSV(){
+  var q = function(s){ s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  var rows = [['card','cycle_start','cycle_end','date','entered_as','amount_entered','credit_limit','unpaid_prior_statement','spent_this_cycle','change_since_previous','note']];
+  state.cards.forEach(function(card){
+    cyclesOf(card).slice().reverse().forEach(function(g){
+      withDeltas(g.list).forEach(function(x){
+        rows.push([card.name, g.cycle.key, ymd(g.cycle.end), x.c.date, x.c.mode, x.c.value, x.c.limit, x.c.carried || 0, x.spent, x.first ? '' : x.delta, x.c.note || '']);
+      });
+    });
+  });
+  shareOrDownload('card-cycle-' + todayStr() + '.csv', rows.map(function(r){ return r.map(q).join(','); }).join('\n'), 'text/csv');
+}
+$('#importFile').addEventListener('change', function(e){
+  var file = e.target.files && e.target.files[0]; if (!file) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try {
+      var obj = JSON.parse(r.result);
+      if (!obj || !Array.isArray(obj.cards) || !Array.isArray(obj.checkins)) throw new Error('bad');
+      if (!confirm('Replace everything on this phone with this backup (' + obj.cards.length + ' card' + (obj.cards.length === 1 ? '' : 's') + ', ' + obj.checkins.length + ' check-ins)?')) return;
+      state = normalize(obj); save(); view = 'now'; render(); toast('Backup restored');
+    } catch (err) { toast("That file isn't a Card Cycle backup"); }
+    e.target.value = '';
+  };
+  r.readAsText(file);
+});
+
+/* ---------- events ---------- */
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var act = el.dataset.act, card = activeCard();
+  if (act === 'closeBg') { if (e.target === el) closeSheet(); return; }
+  e.preventDefault();
+  switch (act) {
+    case 'tab': view = el.dataset.tab; render(); break;
+    case 'checkin': openCheckin({ date: el.dataset.date }); break;
+    case 'edit': openCheckin({ id: el.dataset.id }); break;
+    case 'close': closeSheet(); break;
+    case 'deleteCI':
+      if (confirm('Delete this check-in?')) { state.checkins = state.checkins.filter(function(c){ return c.id !== sheet.id; }); save(); closeSheet(); render(); toast('Deleted'); }
+      break;
+    case 'hideInstall': state.ui.hideInstall = true; save(); render(); break;
+    case 'skipFinal': state.ui.skipFinal[el.dataset.key] = true; save(); render(); break;
+    case 'use': state.activeCardId = el.dataset.id; save(); view = 'now'; render(); break;
+    case 'addCard': openAddCard(); break;
+    case 'export': exportJSON(); break;
+    case 'exportCsv': exportCSV(); break;
+    case 'import': $('#importFile').click(); break;
+    case 'deleteCard':
+      if (card && confirm('Delete ' + card.name + ' and all ' + cardCheckins(card).length + ' of its check-ins? This can\'t be undone.')) {
+        state.checkins = state.checkins.filter(function(c){ return c.cardId !== card.id; });
+        state.cards = state.cards.filter(function(c){ return c.id !== card.id; });
+        state.activeCardId = state.cards.length ? state.cards[0].id : null;
+        save(); view = 'now'; render(); toast('Card deleted');
+      }
+      break;
+  }
+});
+document.addEventListener('change', function(e){
+  if (e.target.id === 'cardSwitch') { state.activeCardId = e.target.value; save(); render(); }
+});
+document.addEventListener('submit', function(e){
+  var f = e.target; e.preventDefault();
+  if (f.dataset.form === 'checkin') return saveCheckin(f);
+  if (f.dataset.form === 'card' || f.dataset.form === 'newcard') {
+    var data = readCardForm(f); if (!data) return;
+    if (f.dataset.new === '1' || f.dataset.form === 'newcard') {
+      var c = Object.assign({ id: uid() }, data); state.cards.push(c); state.activeCardId = c.id;
+      if (f.dataset.form === 'newcard') closeSheet();
+      save(); view = 'now'; render(); toast(c.name + ' added');
+    } else {
+      Object.assign(activeCard(), data); save(); render(); toast('Saved');
+    }
+  }
+});
+function openAddCard(){
+  $('#sheetRoot').innerHTML = '<div class="backdrop" data-act="closeBg"><form class="sheet" data-form="newcard"><header><h2>Add a card</h2><button type="button" class="btn ghost" data-act="close">Cancel</button></header>' +
+    cardFields(null) + '<button class="btn primary block" style="margin-top:16px">Add card</button></form></div>';
+  document.body.style.overflow = 'hidden';
+  var f = $('form[data-form="newcard"]'), sd = f.elements.startDay, hint = $('#cycleHint', f);
+  var upd = function(){ hint.textContent = cycleHintText(sd.value); }; sd.addEventListener('input', upd); upd();
+}
+var tt;
+function toast(msg){ var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove('show'); }, 2200); }
+
+/* re-render when reopened on a new day (Home Screen apps stay alive in the background) */
+var lastDay = todayStr();
+document.addEventListener('visibilitychange', function(){ if (!document.hidden && todayStr() !== lastDay && !sheet) { lastDay = todayStr(); render(); } });
+
+if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
+if ('serviceWorker' in navigator && location.protocol !== 'file:') { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+
+/* expose pure functions for testing */
+window.__cc = { cycleFor: cycleFor, spentOf: spentOf, ymd: ymd };
+render();
+})();
+</script>
+</body>
+</html>

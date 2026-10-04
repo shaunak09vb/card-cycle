@@ -1,0 +1,14 @@
+{
+  "name": "Card Cycle",
+  "short_name": "Card Cycle",
+  "description": "Weekly credit card spending check-ins, per statement cycle.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f1ec",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
