@@ -6,19 +6,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Card Cycle">
+<meta name="apple-mobile-web-app-title" content="Weekly Expense Tracker">
 <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Card Cycle</title>
+<title>Weekly Expense Tracker</title>
 <style>
 :root{
   --bg:#f3f1ec; --surface:#ffffff; --surface-2:#f7f5f0; --text:#1b1d21; --muted:#686c73; --line:#e3dfd6;
   --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#dcefeb;
   --good:#15803d; --good-soft:#e3f3e7; --warn:#b45309; --warn-soft:#fbefdc; --bad:#b91c1c; --bad-soft:#fbe5e3;
   --radius:18px; --shadow:0 1px 2px rgba(20,20,20,.05),0 4px 14px rgba(20,20,20,.04);
+  --c1:#0f766e; --c2:#4f46e5; --c3:#c2410c; --c4:#be185d;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -26,6 +27,7 @@
     --accent:#2dd4bf; --accent-ink:#06201d; --accent-soft:#12332f;
     --good:#4ade80; --good-soft:#123020; --warn:#fbbf24; --warn-soft:#33270e; --bad:#f87171; --bad-soft:#3a1717;
     --shadow:none;
+    --c1:#2dd4bf; --c2:#a5b4fc; --c3:#fdba74; --c4:#f9a8d4;
   }
 }
 *{box-sizing:border-box}
@@ -34,11 +36,11 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system
 .num,.big,.val,.cyc-total,.amt{font-variant-numeric:tabular-nums}
 button,input,select{font:inherit;color:inherit}
 .app{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 96px)}
-header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
-header.top h1{font-size:28px;letter-spacing:-.02em;margin:0;font-weight:700}
-.switch{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 30px 7px 14px;font-size:14px;font-weight:600;max-width:55%;
-  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
-.pill{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin:4px 0 14px}
+header.top h1{font-size:22px;line-height:1.2;letter-spacing:-.02em;margin:0;font-weight:700}
+.switch{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 30px 7px 14px;font-size:14px;font-weight:600;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;max-width:260px;background-size:5px 5px;background-repeat:no-repeat}
+.pill{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 12px;box-shadow:var(--shadow)}
 .label{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .muted{color:var(--muted)} .small{font-size:13px} .center{text-align:center}
@@ -132,15 +134,42 @@ nav.tabs button.on{color:var(--accent)}
 .banner{background:var(--warn-soft);border:1px solid transparent}
 .banner p{margin:4px 0}
 .hidden{display:none!important}
+/* combined */
+.stack{position:relative;display:flex;height:14px;background:var(--surface-2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.stack.lg{height:12px;border-radius:999px;margin:14px 0 8px}
+.stack>span{height:100%;flex:none}
+.stack>i{position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.55}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;flex:none}
+.keys{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:12px}
+.keys span{display:inline-flex;align-items:center}
+.mcard{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.mhead{display:flex;align-items:center;gap:2px}
+.preview.small{font-size:13px;min-height:0;padding:8px 10px;margin-top:10px}
+.preview.small b{font-size:15px}
+.pm{padding:12px 0;border-top:1px solid var(--line)}
+.pm:first-of-type{border-top:0}
+.pm-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;align-items:baseline}
+.row .sub{display:block;font-size:12px;font-weight:400}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.tiles .card{margin:0}
+.tile{min-width:0}
+.tile .tl{display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+.tile .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tv{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.tile .ts{font-size:12px;color:var(--muted)}
+.tile.total{grid-column:1/-1}
+.tile.total .tv{font-size:40px;letter-spacing:-.03em}
+.pay{border-color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="top"><h1 id="title">Card Cycle</h1><div id="switchWrap"></div></header>
+  <header class="top"><h1 id="title">Weekly Expense Tracker</h1><div id="switchWrap"></div></header>
   <main id="main"></main>
 </div>
 <nav class="tabs hidden" id="tabs"><div class="in">
   <button data-act="tab" data-tab="now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>This cycle</button>
+  <button data-act="tab" data-tab="combined" id="tabCombined" class="hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z"/><path d="m2.5 12.5 9.5 5 9.5-5M2.5 16.5l9.5 5 9.5-5"/></svg>All cards</button>
   <button data-act="tab" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>History</button>
   <button data-act="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</button>
 </div></nav>
@@ -197,7 +226,7 @@ function cycleLabel(c){ return fmtD(c.start) + ' – ' + fmtD(c.end) + ', ' + c.
 function prevCycle(c, startDay){ return cycleFor(ymd(addDays(c.start, -1)), startDay); }
 
 /* ---------- state ---------- */
-function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], ui:{ hideInstall:false, skipFinal:{} } }; }
+function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], combined:{ budget:0, startDay:null }, ui:{ hideInstall:false, skipFinal:{}, stmtSkip:{} } }; }
 function normalize(s){
   var b = blank();
   if (!s || typeof s !== 'object') return b;
@@ -205,7 +234,9 @@ function normalize(s){
   b.checkins = Array.isArray(s.checkins) ? s.checkins : [];
   b.activeCardId = s.activeCardId || null;
   b.ui = Object.assign(b.ui, s.ui || {});
+  b.combined = Object.assign(b.combined, s.combined || {});
   if (!b.ui.skipFinal) b.ui.skipFinal = {};
+  if (!b.ui.stmtSkip) b.ui.stmtSkip = {};
   return b;
 }
 var storageOK = true;
@@ -217,12 +248,26 @@ function load(){
   } catch (e) { storageOK = false; }
   return blank();
 }
+/* Check-ins marked auto get their "last statement, not paid yet" amount recalculated whenever data
+   changes, oldest first, so adding a closing-day check-in later fixes the weeks after it too. */
+function refreshAuto(){
+  state.cards.forEach(function(card){
+    cardCheckins(card).forEach(function(c){
+      if (!c.auto) return;
+      var v = carriedDefault(card, c.date, c.id).v;
+      if (v !== '') c.carried = v;
+    });
+  });
+}
 function save(){
+  try { refreshAuto(); } catch (e) {}
   try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; }
   catch (e) { storageOK = false; toast("Couldn't save on this device"); }
 }
 var state = load();
-var view = 'now';
+var view = (state.cards.length > 1 && state.combined.budget > 0) ? 'combined' : 'now';
+function combinedStart(){ return state.combined.startDay || (state.cards[0] && state.cards[0].startDay) || 10; }
+function cardColor(i){ return 'var(--c' + (i % 4 + 1) + ')'; }
 
 function activeCard(){
   var c = state.cards.find(function(x){ return x.id === state.activeCardId; });
@@ -268,11 +313,15 @@ function render(){
   var card = activeCard();
   var main = $('#main');
   renderSwitch(card);
-  if (!card) { $('#tabs').classList.add('hidden'); main.innerHTML = onboardingHTML(); wireCardForm(); return; }
+  if (!card) { $('#tabs').classList.add('hidden'); main.innerHTML = onboardingHTML(); wireHints(); return; }
+  var multi = state.cards.length > 1;
+  if (view === 'combined' && !multi) view = 'now';
   $('#tabs').classList.remove('hidden');
+  $('#tabCombined').classList.toggle('hidden', !multi);
   document.querySelectorAll('nav.tabs button').forEach(function(b){ b.classList.toggle('on', b.dataset.tab === view); });
-  if (view === 'history') main.innerHTML = historyHTML(card);
-  else if (view === 'settings') { main.innerHTML = settingsHTML(card); wireCardForm(); }
+  if (view === 'combined') { $('#switchWrap').innerHTML = '<span class="pill">All cards</span>'; main.innerHTML = combinedHTML(); wireHints(); }
+  else if (view === 'history') main.innerHTML = historyHTML(card);
+  else if (view === 'settings') { main.innerHTML = settingsHTML(card); wireHints(); }
   else main.innerHTML = nowHTML(card);
   window.scrollTo(0, 0);
 }
@@ -292,7 +341,7 @@ function isStandalone(){ return window.navigator.standalone === true || (window.
 function installBanner(){
   if (!storageOK) return '<section class="card banner"><b>Storage is blocked here.</b><p class="small">Check-ins can\'t be saved in this browser mode (Private Browsing blocks it). Open the app from your Home Screen icon.</p></section>';
   if (!isIOS() || isStandalone() || state.ui.hideInstall) return '';
-  return '<section class="card banner"><b>Install it first</b><p class="small">In Safari tap <b>Share</b> → <b>Add to Home Screen</b>, then open Card Cycle from that icon. The installed app keeps its own data, separate from Safari, so start your check-ins there.</p>' +
+  return '<section class="card banner"><b>Install it first</b><p class="small">In Safari tap <b>Share</b> → <b>Add to Home Screen</b>, then open Weekly Expense Tracker from that icon. The installed app keeps its own data, separate from Safari, so start your check-ins there.</p>' +
     '<button class="btn ghost" data-act="hideInstall">Dismiss</button></section>';
 }
 
@@ -303,9 +352,9 @@ function finalNudge(card, cyc, today){
   var list = inCycle(card, pc.key);
   if (!list.length || list.some(function(c){ return c.date === endStr; })) return '';
   var last = list[list.length - 1];
-  return '<section class="card nudge"><b>' + esc(cycleLabel(pc)) + ' has closed</b>' +
+  return '<section class="card nudge"><b>' + (state.cards.length > 1 ? esc(card.name) + ': ' : '') + esc(cycleLabel(pc)) + ' has closed</b>' +
     '<p class="small">Your last check-in for it was ' + fmtDW(last.date) + ', so the final few days aren\'t counted. Add a check-in dated ' + fmtD(pc.end) + ' to lock in the final total — your statement has the numbers.</p>' +
-    '<div class="btnrow"><button class="btn primary" data-act="checkin" data-date="' + endStr + '">Add final for ' + fmtD(pc.end) + '</button>' +
+    '<div class="btnrow"><button class="btn primary" data-act="checkin" data-card="' + card.id + '" data-date="' + endStr + '">Add final for ' + fmtD(pc.end) + '</button>' +
     '<button class="btn ghost" data-act="skipFinal" data-key="' + card.id + pc.key + '">Skip</button></div></section>';
 }
 
@@ -420,7 +469,7 @@ function historyHTML(card){
       '<div class="muted small">' + w.length + ' check-in' + (w.length === 1 ? '' : 's') + ' · ' + util + '% of limit' + (tgt ? ' · target ' + money(tgt) : '') + '</div></div>' +
       '<div class="cyc-total">' + money(last.spent) + (tgt ? '<div class="small ' + (last.spent > tgt ? 'up' : 'down') + '">' + (last.spent > tgt ? money(last.spent - tgt) + ' over' : money(tgt - last.spent) + ' under') + '</div>' : '') + '</div></summary>' +
       '<div class="cyc-body">' + w.map(function(x){
-        return '<div class="ci"><div><div class="d">' + fmtDW(x.c.date) + '</div><div class="n">' + (x.c.mode === 'balance' ? 'Balance ' : 'Available ') + money(x.c.value) + (x.c.carried ? ' · less ' + money(x.c.carried) + ' prior' : '') + (x.c.note ? ' · ' + esc(x.c.note) : '') + '</div></div>' +
+        return '<div class="ci"><div><div class="d">' + fmtDW(x.c.date) + '</div><div class="n">' + (x.c.mode === 'balance' ? 'Balance ' : 'Available ') + money(x.c.value) + (x.c.carried ? ' · minus ' + money(x.c.carried) + ' from last statement' : '') + (x.c.note ? ' · ' + esc(x.c.note) : '') + '</div></div>' +
           '<div class="amt">' + money(x.spent) + '<div class="n">' + (x.first ? 'first' : signed(x.delta)) + '</div></div>' +
           '<button class="btn ghost" data-act="edit" data-id="' + x.c.id + '" aria-label="Edit">Edit</button></div>';
       }).join('') + '<button class="btn ghost" data-act="checkin" data-date="' + (live ? todayStr() : ymd(g.cycle.end)) + '">+ Add check-in to this cycle</button></div></details>';
@@ -432,22 +481,44 @@ function cardFields(c){
   c = c || { name:'', limit:'', startDay:10, target:'', mode:'available' };
   return '<label class="f">Card name<input name="name" value="' + esc(c.name) + '" placeholder="e.g. Amex Cobalt" maxlength="40" required></label>' +
     '<label class="f">Credit limit<input name="limit" inputmode="decimal" value="' + (c.limit === '' ? '' : c.limit) + '" placeholder="5000" required></label>' +
-    '<label class="f">Cycle starts on day<input name="startDay" type="number" inputmode="numeric" min="1" max="31" value="' + c.startDay + '" required>' +
-    '<div class="hint" id="cycleHint"></div></label>' +
+    '<label class="f">Cycle starts on day<input name="startDay" data-cyclehint="Each cycle runs" type="number" inputmode="numeric" min="1" max="31" value="' + c.startDay + '" required>' +
+    '<div class="hint cyclehint"></div></label>' +
+    '<label class="f">I pay this card on day <span class="muted">(optional)</span><input name="payDay" type="number" inputmode="numeric" min="1" max="31" value="' + (c.payDay || '') + '" placeholder="e.g. 15">' +
+    '<div class="hint">The day you pay off each statement. Used for the payment tiles, and to keep a bill you haven\'t paid yet out of your new spending.</div></label>' +
     '<label class="f">Cycle spending target <span class="muted">(optional)</span><input name="target" inputmode="decimal" value="' + (c.target ? c.target : '') + '" placeholder="e.g. 2500">' +
     '<div class="hint">Gives you an on-pace check and a weekly limit that adjusts after each check-in.</div></label>' +
     '<label class="f">What you\'ll read off your card app<select name="mode"><option value="available"' + (c.mode !== 'balance' ? ' selected' : '') + '>Available credit</option><option value="balance"' + (c.mode === 'balance' ? ' selected' : '') + '>Current balance</option></select></label>';
 }
-function cycleHintText(day){
+function cycleHintText(day, lead){
   day = Number(day);
   if (!(day >= 1 && day <= 31)) return 'Enter a day from 1 to 31.';
   var end = day === 1 ? 'the last day of the month' : ('the ' + ord(day - 1) + ' of the next month');
-  return 'Each cycle runs from the ' + ord(day) + ' to ' + end + (day > 28 ? ' (short months use their last day)' : '') + '.';
+  return (lead || 'Each cycle runs') + ' from the ' + ord(day) + ' to ' + end + (day > 28 ? ' (short months use their last day)' : '') + '.';
+}
+function wireHints(){
+  document.querySelectorAll('input[data-cyclehint]').forEach(function(inp){
+    var hint = inp.parentElement.querySelector('.cyclehint');
+    var upd = function(){ hint.textContent = cycleHintText(inp.value, inp.dataset.cyclehint); };
+    inp.addEventListener('input', upd); upd();
+  });
+}
+function budgetBasis(){
+  return state.combined.basis || (state.cards.some(function(c){ return c.payDay > 0; }) ? 'pay' : 'month');
+}
+function combinedFields(){
+  var b = state.combined.budget > 0 ? state.combined.budget : '', basis = budgetBasis();
+  return '<label class="f">Monthly budget across all cards<input name="budget" inputmode="decimal" value="' + b + '" placeholder="e.g. 3250"></label>' +
+    '<label class="f">Budget counts<select name="basis">' +
+      '<option value="pay"' + (basis === 'pay' ? ' selected' : '') + '>What I pay each month (all cards\' statements)</option>' +
+      '<option value="month"' + (basis === 'month' ? ' selected' : '') + '>What I spend in a budget month</option></select>' +
+    '<div class="hint">“What I pay” keeps each month\'s total payment under budget. It needs a pay day on every card.</div></label>' +
+    '<label class="f">Budget month starts on day <span class="muted">(for “What I spend”)</span><input name="cstart" data-cyclehint="Your budget month runs" type="number" inputmode="numeric" min="1" max="31" value="' + combinedStart() + '">' +
+    '<div class="hint cyclehint"></div><div class="hint">Matching your main card\'s cycle makes its numbers line up exactly. Spending on cards with other cycles is split by day.</div></label>';
 }
 
 function onboardingHTML(){
   return installBanner() + '<section class="card"><div class="eyebrow">Set up your card</div><h2 style="margin:6px 0 4px">Track spending per statement cycle</h2>' +
-    '<p class="muted small" style="margin:0">Every Sunday you log what your card app shows. Card Cycle works out what you\'ve spent since the cycle started, how this week compares, and keeps every cycle in History.</p>' +
+    '<p class="muted small" style="margin:0">Every Sunday you log what your card app shows. Weekly Expense Tracker works out what you\'ve spent since the cycle started, how this week compares, and keeps every cycle in History.</p>' +
     '<form data-form="card" data-new="1">' + cardFields(null) + '<button class="btn primary block" style="margin-top:16px">Start tracking</button></form></section>';
 }
 
@@ -462,6 +533,10 @@ function settingsHTML(card){
         (c.id === card.id ? '<span class="v small muted">Showing</span>' : '<button class="btn ghost" data-act="use" data-id="' + c.id + '">Show</button>') + '</div>';
     }).join('') + '</div><button class="btn" data-act="addCard" style="margin-top:8px">+ Add another card</button></section>' +
 
+    (others ? '<section class="card"><div class="label">Combined budget</div><form data-form="combined">' + combinedFields() +
+      '<button class="btn primary block" style="margin-top:16px">Save budget</button></form>' +
+      '<p class="small muted" style="margin:10px 0 0">Shown on the All cards tab. Clear the amount to turn it off.</p></section>' : '') +
+
     '<section class="card"><div class="label">Sunday reminder</div><ol class="steps small">' +
     '<li>Open the <b>Reminders</b> app and add “Card check-in”.</li>' +
     '<li>Tap ⓘ → turn on <b>Date</b> and <b>Time</b> → pick this Sunday, e.g. 7:00 PM.</li>' +
@@ -473,16 +548,10 @@ function settingsHTML(card){
 
     '<section class="card"><div class="label">Danger zone</div><div class="btnrow"><button class="btn danger" data-act="deleteCard">Delete ' + esc(card.name) + ' and its history</button></div>' +
     (others ? '' : '<p class="small muted" style="margin:8px 0 0">This is your only card; deleting it returns you to setup.</p>') + '</section>' +
-    '<p class="small muted center">Card Cycle · ' + state.checkins.length + ' check-ins stored on this device</p>';
+    '<p class="small muted center">Weekly Expense Tracker · ' + state.checkins.length + ' check-ins stored on this device</p>';
 }
 
 /* ---------- card form ---------- */
-function wireCardForm(){
-  var f = document.querySelector('form[data-form="card"]'); if (!f) return;
-  var sd = f.elements.startDay, hint = $('#cycleHint', f);
-  var upd = function(){ hint.textContent = cycleHintText(sd.value); };
-  sd.addEventListener('input', upd); upd();
-}
 function readCardForm(f){
   var name = f.elements.name.value.trim();
   var limit = parseMoney(f.elements.limit.value);
@@ -491,18 +560,23 @@ function readCardForm(f){
   if (!name) return toast('Give the card a name');
   if (!(limit > 0)) return toast('Enter your credit limit');
   if (!(startDay >= 1 && startDay <= 31)) return toast('Cycle day must be 1–31');
-  return { name:name, limit:round2(limit), startDay:startDay, target:target > 0 ? round2(target) : 0, mode:f.elements.mode.value };
+  var pdRaw = f.elements.payDay.value.trim(), payDay = pdRaw === '' ? 0 : Math.round(Number(pdRaw));
+  if (pdRaw !== '' && !(payDay >= 1 && payDay <= 31)) return toast('Pay day must be 1–31');
+  return { name:name, limit:round2(limit), startDay:startDay, payDay:payDay, target:target > 0 ? round2(target) : 0, mode:f.elements.mode.value };
 }
 
 /* ---------- check-in sheet ---------- */
 var sheet = null;
+function sheetCard(){ return state.cards.find(function(c){ return c.id === sheet.cardId; }); }
 function openCheckin(opts){
-  var card = activeCard(); if (!card) return;
   var editing = opts.id ? state.checkins.find(function(c){ return c.id === opts.id; }) : null;
+  var cid = editing ? editing.cardId : opts.cardId;
+  var card = cid ? state.cards.find(function(c){ return c.id === cid; }) : activeCard();
+  if (!card) return;
   var date = editing ? editing.date : (opts.date || todayStr());
   var mode = editing ? editing.mode : (card.mode || 'available');
   var limit = editing ? editing.limit : card.limit;
-  sheet = { id: editing ? editing.id : null, mode: mode, limit: limit, carriedTouched: !!editing };
+  sheet = { id: editing ? editing.id : null, cardId: card.id, mode: mode, limit: limit, ask: null };
   var root = $('#sheetRoot');
   root.innerHTML = '<div class="backdrop" data-act="closeBg"><form class="sheet" data-form="checkin" novalidate>' +
     '<header><h2>' + (editing ? 'Edit check-in' : 'Weekly check-in') + '</h2><button type="button" class="btn ghost" data-act="close">Cancel</button></header>' +
@@ -510,8 +584,7 @@ function openCheckin(opts){
     '<label class="f">Date<input type="date" name="date" value="' + date + '" max="' + todayStr() + '" required></label>' +
     '<div class="seg" role="tablist"><button type="button" data-mode="available">Available credit</button><button type="button" data-mode="balance">Current balance</button></div>' +
     '<label class="f"><span id="valLabel"></span><input name="value" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (editing ? editing.value : '') + '"></label>' +
-    '<label class="f">Unpaid from last statement<input name="carried" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (editing ? (editing.carried || 0) : '') + '">' +
-    '<div class="hint" id="carriedHint"></div></label>' +
+    '<div id="askBox"></div>' +
     '<label class="f">Note <span class="muted">(optional)</span><input name="note" maxlength="80" value="' + esc(editing ? editing.note : '') + '" placeholder="e.g. flights for December"></label>' +
     '<div class="preview" id="preview" aria-live="polite"></div>' +
     '<button class="btn primary block" style="margin-top:14px">' + (editing ? 'Save changes' : 'Save check-in') + '</button>' +
@@ -519,9 +592,9 @@ function openCheckin(opts){
     '</form></div>';
   document.body.style.overflow = 'hidden';
   var f = $('form[data-form="checkin"]');
-  f.addEventListener('input', function(e){ if (e.target.name === 'carried') sheet.carriedTouched = true; if (e.target.name === 'date' && !sheet.carriedTouched) defaultCarried(f); updatePreview(f); });
+  f.addEventListener('input', function(e){ if (e.target.name === 'date') renderAsk(f); updatePreview(f); });
   f.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ sheet.mode = b.dataset.mode; updatePreview(f); }); });
-  if (!editing) defaultCarried(f);
+  renderAsk(f);
   updatePreview(f);
   setTimeout(function(){ if (!editing) f.elements.value.focus(); }, 250);
 }
@@ -529,25 +602,21 @@ function priorInCycle(card, date, excludeId){
   var key = cycleFor(date, card.startDay).key;
   return inCycle(card, key).filter(function(c){ return c.id !== excludeId && c.date <= date; });
 }
-function defaultCarried(f){
-  var card = activeCard(), d = f.elements.date.value || todayStr();
-  var prior = priorInCycle(card, d, sheet.id);
-  f.elements.carried.value = prior.length ? (prior[prior.length - 1].carried || 0) : '';
-  sheet.firstOfCycle = !prior.length;
+function renderAsk(f){
+  var card = sheetCard(), d = f.elements.date.value || todayStr(), ask = needsStmt(card, d);
+  var same = ask && sheet.ask && ask.pc.key === sheet.ask.pc.key;
+  if (!same) $('#askBox').innerHTML = ask ? askHTML(card, ask, 'stmt') : '';
+  sheet.ask = ask;
 }
 function updatePreview(f){
-  var card = activeCard();
+  var card = sheetCard();
   f.querySelectorAll('.seg button').forEach(function(b){ b.classList.toggle('on', b.dataset.mode === sheet.mode); });
   $('#valLabel').textContent = sheet.mode === 'balance' ? 'Current balance right now' : 'Available credit right now';
   var d = f.elements.date.value || todayStr();
   var prior = priorInCycle(card, d, sheet.id);
   var cyc = cycleFor(d, card.startDay);
-  var ch = $('#carriedHint');
-  ch.className = 'hint' + (!prior.length ? ' strong' : '');
-  ch.innerHTML = (!prior.length ? 'First check-in for ' + esc(cycleLabel(cyc)) + '. If your last statement isn\'t paid yet, enter that statement balance here so it isn\'t counted as new spending. ' : '') +
-    'Once your statement is paid, this is 0. Paid extra toward this cycle\'s charges? Enter that as a negative number.';
-  var v = parseMoney(f.elements.value.value), carried = parseMoney(f.elements.carried.value);
-  if (isNaN(carried)) carried = 0;
+  var v = parseMoney(f.elements.value.value);
+  var carried = carriedFor(card, d, sheet.id, f.elements.stmt ? parseMoney(f.elements.stmt.value) : NaN);
   var pv = $('#preview');
   if (isNaN(v)) { pv.innerHTML = '<span class="muted">Spent this cycle will show here.</span>'; return; }
   var spent = spentOf({ mode:sheet.mode, value:v, limit:sheet.limit, carried:carried });
@@ -555,22 +624,473 @@ function updatePreview(f){
   if (prior.length) { var p = spentOf(prior[prior.length - 1]); dropped = spent < p; line = signed(round2(spent - p)) + ' since ' + fmtDW(prior[prior.length - 1].date); }
   else line = 'since the cycle started ' + fmtD(cyc.start);
   var warn = (sheet.mode === 'available' && v > sheet.limit) ? '<div class="small up">That\'s more than your ' + money(sheet.limit) + ' limit — double-check the number.</div>'
-    : dropped ? '<div class="small" style="color:var(--warn)">Lower than last time. Refunds do this; so does a payment. If you paid toward this cycle\'s charges, enter it as a negative number under “Unpaid from last statement” so your spending stays accurate.</div>' : '';
+    : dropped ? '<div class="small" style="color:var(--warn)">Lower than last time — usually a refund, or a payment made earlier than your pay day.</div>' : '';
   pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b><div class="small muted">' + line + '</div>' + warn;
 }
 function closeSheet(){ $('#sheetRoot').innerHTML = ''; document.body.style.overflow = ''; sheet = null; }
 function saveCheckin(f){
-  var card = activeCard();
-  var d = f.elements.date.value, v = parseMoney(f.elements.value.value), carried = parseMoney(f.elements.carried.value);
+  var card = sheetCard();
+  var d = f.elements.date.value, v = parseMoney(f.elements.value.value);
   if (!d) return toast('Pick a date');
   if (d > todayStr()) return toast("Date can't be in the future");
   if (isNaN(v) || v < 0) return toast('Enter the amount from your card app');
-  if (isNaN(carried)) carried = 0;
+  var askVal = f.elements.stmt ? parseMoney(f.elements.stmt.value) : NaN;
+  if (!isNaN(askVal) && askVal < 0) return toast('Statement balance can\'t be negative');
+  var carried = carriedFor(card, d, sheet.id, askVal), ask = needsStmt(card, d);
+  if (ask) recordStmt(card, ask, isNaN(askVal) ? 0 : askVal);
   var rec;
   if (sheet.id) rec = state.checkins.find(function(c){ return c.id === sheet.id; });
   if (!rec) { rec = { id: uid(), cardId: card.id, created: Date.now(), limit: sheet.limit, target: card.target || 0 }; state.checkins.push(rec); }
   rec.date = d; rec.mode = sheet.mode; rec.value = round2(v); rec.carried = round2(carried); rec.note = f.elements.note.value.trim();
+  if (rec.note !== 'Statement balance') rec.auto = true;
   save(); closeSheet(); render(); toast('Check-in saved');
+}
+
+/* ---------- combined budget across cards ----------
+   Each check-in's "spent since previous check-in" covers a span of days (or, for the first
+   check-in of a card's cycle, the days since that cycle started). We spread that amount evenly
+   over those days, then add up the days that fall inside the budget month. This lets cards with
+   different statement days share one monthly budget without double counting.              */
+function weekEnd(d){ return addDays(d, (7 - d.getDay()) % 7); }
+function allocations(card){
+  var out = [];
+  cyclesOf(card).forEach(function(g){
+    var prev = null;
+    withDeltas(g.list).forEach(function(x){
+      var e = parseYmd(x.c.date);
+      var s = x.first ? g.cycle.start : addDays(parseYmd(prev), 1);
+      if (s > e) s = e;
+      var n = daysBetween(s, e) + 1, per = x.delta / n;
+      for (var i = 0; i < n; i++) out.push({ d: ymd(addDays(s, i)), a: per });
+      prev = x.c.date;
+    });
+  });
+  return out;
+}
+function combinedFor(per, allocCache){
+  var ps = ymd(per.start), pe = ymd(per.end), weeks = {};
+  var rows = state.cards.map(function(card, i){
+    var amt = 0, list = cardCheckins(card).filter(function(c){ return c.date <= pe; });
+    var last = list.length ? list[list.length - 1].date : null;
+    (allocCache[card.id] || []).forEach(function(x){
+      if (x.d < ps || x.d > pe) return;
+      amt += x.a;
+      var wk = ymd(weekEnd(parseYmd(x.d)));
+      if (!weeks[wk]) weeks[wk] = state.cards.map(function(){ return 0; });
+      weeks[wk][i] += x.a;
+    });
+    return { card:card, i:i, amt:round2(amt), last:last, current: !!(last && last >= ps) };
+  });
+  var total = round2(rows.reduce(function(s, r){ return s + r.amt; }, 0));
+  var lasts = rows.filter(function(r){ return r.current; }).map(function(r){ return r.last; }).sort();
+  var wk = Object.keys(weeks).sort().map(function(k){
+    return { key:k, parts:weeks[k].map(round2), total:round2(weeks[k].reduce(function(a, b){ return a + b; }, 0)) };
+  });
+  return { rows:rows, total:total, asOf: lasts.length ? lasts[0] : null, latest: lasts.length ? lasts[lasts.length - 1] : null, weeks:wk };
+}
+/* ---------- payments ----------
+   payDay = the day of the month the user pays a statement. The pay date that falls inside a cycle
+   pays the PREVIOUS cycle's statement (e.g. cycle Oct 10–Nov 9 contains Oct 15, which pays Sep 10–Oct 9). */
+function payDateIn(cyc, payDay){
+  var y = cyc.start.getFullYear(), m = cyc.start.getMonth();
+  var d = new Date(y, m, Math.min(payDay, dim(y, m)));
+  if (d < cyc.start) { m++; if (m > 11) { m = 0; y++; } d = new Date(y, m, Math.min(payDay, dim(y, m))); }
+  return d;
+}
+function cycleTotal(card, cyc){
+  var w = withDeltas(inCycle(card, cyc.key)), last = w[w.length - 1];
+  return last ? { amt:last.spent, date:last.c.date, final:last.c.date === ymd(cyc.end) } : null;
+}
+function nextPayment(card, today){
+  if (!card.payDay) return null;
+  var t = parseYmd(today), cyc = cycleFor(today, card.startDay), pd = payDateIn(cyc, card.payDay), stmt;
+  if (t <= pd) stmt = prevCycle(cyc, card.startDay);
+  else { stmt = cyc; pd = payDateIn(cycleFor(ymd(addDays(cyc.end, 1)), card.startDay), card.payDay); }
+  var tot = cycleTotal(card, stmt);
+  var status = !tot ? 'none' : t <= stmt.end ? 'open' : tot.final ? 'final' : 'partial';
+  return { card:card, stmt:stmt, payDate:pd, amt: tot ? tot.amt : 0, asOf: tot && tot.date, status:status, closed: t > stmt.end, closesToday: ymd(stmt.end) === today };
+}
+/* What "Unpaid from last statement" should be on a given date, if we can tell. */
+function carriedDefault(card, date, excludeId){
+  var cyc = cycleFor(date, card.startDay), prior = priorInCycle(card, date, excludeId);
+  if (card.payDay) {
+    var pd = payDateIn(cyc, card.payDay), pc = prevCycle(cyc, card.startDay);
+    if (parseYmd(date) >= pd) return { v:0, hint:'You pay on the ' + ord(card.payDay) + ', so last statement should be paid by now (0). Change it if you didn\'t pay in full.' };
+    var tot = cycleTotal(card, pc);
+    if (tot) return { v:tot.amt, hint:'Filled in with your ' + fmtD(pc.start) + ' – ' + fmtD(pc.end) + ' statement' + (tot.final ? '' : ' (as of ' + fmtD(tot.date) + ')') + ', which you pay on ' + fmtD(pd) + '. Set to 0 if you\'ve already paid it.' };
+  }
+  if (prior.length) return { v:prior[prior.length - 1].carried || 0, hint:'0 once your statement is paid. Paid extra toward this cycle? Enter it as a negative number.' };
+  return { v:'', strong:true, hint:'First check-in for the ' + cycleLabel(cyc) + ' cycle. If your last statement isn\'t paid yet, enter that balance here so it isn\'t counted as new spending.' };
+}
+/* The unpaid-statement amount is worked out automatically from the pay day. The only time the user
+   is asked is when a statement that is still unpaid has no check-ins at all (e.g. the first week). */
+function needsStmt(card, date){
+  if (!(card.payDay > 0)) return null;
+  var cyc = cycleFor(date, card.startDay), pd = payDateIn(cyc, card.payDay), pc = prevCycle(cyc, card.startDay);
+  if (parseYmd(date) >= pd || cycleTotal(card, pc) || state.ui.stmtSkip[card.id + pc.key]) return null;
+  return { pc:pc, pd:pd };
+}
+function askHTML(card, ask, name){
+  return '<label class="f">' + esc(card.name) + ' statement balance, ' + fmtD(ask.pc.start) + ' – ' + fmtD(ask.pc.end) +
+    '<input name="' + name + '" inputmode="decimal" placeholder="0.00" autocomplete="off">' +
+    '<div class="hint">Asked once. This bill is due ' + fmtD(ask.pd) + ', so it shouldn\'t count as new spending. Find it on your statement. Leave blank if you\'ve already paid it.</div></label>';
+}
+function carriedFor(card, date, excludeId, askVal){
+  if (needsStmt(card, date)) return isNaN(askVal) ? 0 : round2(askVal);
+  var v = carriedDefault(card, date, excludeId).v;
+  return v === '' ? 0 : v;
+}
+function recordStmt(card, ask, val){
+  if (val > 0) state.checkins.push({ id: uid(), cardId: card.id, created: Date.now() - 1, limit: card.limit, target: card.target || 0,
+    date: ymd(ask.pc.end), mode: 'balance', value: round2(val), carried: 0, note: 'Statement balance' });
+  else state.ui.stmtSkip[card.id + ask.pc.key] = true;
+}
+
+function stackHTML(parts, scale, cls, marker){
+  return '<div class="stack' + (cls ? ' ' + cls : '') + '">' + parts.map(function(a, i){
+    var w = scale > 0 ? Math.max(0, a) / scale * 100 : 0;
+    return w > 0 ? '<span style="width:' + w + '%;background:' + cardColor(i) + '"></span>' : '';
+  }).join('') + (marker != null ? '<i style="left:' + Math.min(99.5, marker) + '%"></i>' : '') + '</div>';
+}
+function keysHTML(){
+  return '<div class="keys">' + state.cards.map(function(c, i){ return '<span><span class="sw" style="background:' + cardColor(i) + '"></span>' + esc(c.name) + '</span>'; }).join('') + '</div>';
+}
+
+function paymentHTML(pays){
+  if (!pays.length) {
+    return '<section class="card"><div class="label">Next payment</div><p class="small muted" style="margin:6px 0 10px">Add the day you pay each card and this shows what you\'ll owe, card by card, and the total.</p>' +
+      '<button class="btn" data-act="tab" data-tab="settings">Add pay days in Settings</button></section>';
+  }
+  var same = pays.every(function(p){ return ymd(p.payDate) === ymd(pays[0].payDate); });
+  var total = round2(pays.reduce(function(s, p){ return s + p.amt; }, 0));
+  var anyOpen = pays.some(function(p){ return p.status === 'open' && !p.closesToday; });
+  var h = '<section class="card pay"><div class="label">Next payment</div>' +
+    (same ? '<div class="cyc-range" style="margin-top:4px">Pay on ' + fmtDW(pays[0].payDate) + '</div>' : '') + '<div class="rows">';
+  pays.forEach(function(p){
+    var i = state.cards.indexOf(p.card), range = fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end);
+    var st = p.status === 'final' ? 'final'
+      : p.status === 'open' ? (p.closesToday ? 'closes today' : 'so far · closes ' + fmtD(p.stmt.end))
+      : p.status === 'partial' ? '<span style="color:var(--warn)">as of ' + fmtD(p.asOf) + ' · log ' + fmtD(p.stmt.end) + ' for the exact amount</span>'
+      : p.closed ? '<span style="color:var(--warn)">no check-ins for this statement</span>' : 'no check-in yet · closes ' + fmtD(p.stmt.end);
+    h += '<div class="row"><span class="k" style="display:flex;align-items:flex-start;color:var(--text)"><span class="sw" style="background:' + cardColor(i) + ';margin-top:6px"></span><span>' + esc(p.card.name) +
+         '<span class="sub muted">' + range + ' statement · ' + st + (same ? '' : ' · pay ' + fmtD(p.payDate)) + '</span></span></span>' +
+         '<span class="v">' + money(p.amt) + '</span></div>';
+  });
+  h += '<div class="row"><span class="k" style="font-weight:700;color:var(--text)">Total to pay</span><span class="v" style="font-size:22px;font-weight:700">' + money(total) + '</span></div></div>' +
+    (anyOpen ? '<p class="small muted" style="margin:8px 0 0">“So far” amounts keep growing until that statement closes.</p>' : '') +
+    '<p class="small muted" style="margin:4px 0 0">Double-check against each statement before paying.</p></section>';
+  return h;
+}
+
+/* ---------- budget per payment ----------
+   A "payment" for month M = every card's statement paid in M (on that card's pay day).
+   E.g. Oct 15: Amex Sep 10–Oct 9 + Wealthsimple Aug 25–Sep 24. */
+function billFor(y, m){
+  var parts = [];
+  state.cards.forEach(function(card, i){
+    if (!(card.payDay > 0)) return;
+    var P = new Date(y, m, Math.min(card.payDay, dim(y, m)));
+    var stmt = prevCycle(cycleFor(ymd(P), card.startDay), card.startDay);
+    var tot = cycleTotal(card, stmt);
+    parts.push({ card:card, i:i, payDate:P, stmt:stmt, amt: tot ? tot.amt : 0, asOf: tot ? tot.date : null, final: !!(tot && tot.final) });
+  });
+  var dates = parts.map(function(p){ return p.payDate; }).sort(function(a, b){ return a - b; });
+  return { y:y, m:m, parts:parts, total: round2(parts.reduce(function(s, p){ return s + p.amt; }, 0)),
+           payDate: dates.length ? dates[dates.length - 1] : new Date(y, m, 15) };
+}
+function shiftBill(b, n){ var m = b.m + n, y = b.y + Math.floor(m / 12); return billFor(y, ((m % 12) + 12) % 12); }
+function nextBill(today){
+  var t = parseYmd(today), b = billFor(t.getFullYear(), t.getMonth());
+  for (var k = 0; k < 3 && !b.parts.some(function(p){ return p.payDate >= t; }); k++) b = shiftBill(b, 1);
+  return b;
+}
+function billLabel(b){ return new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long', year:'numeric' }) + ' payment'; }
+function partStatus(p, t){
+  var today = ymd(t);
+  if (t < p.stmt.start) return 'starts ' + fmtD(p.stmt.start);
+  if (t <= p.stmt.end) return (p.asOf ? 'so far · ' : 'no check-in yet · ') + (ymd(p.stmt.end) === today ? 'closes today' : 'closes ' + fmtD(p.stmt.end));
+  if (p.final) return 'final';
+  if (p.asOf) return '<span style="color:var(--warn)">as of ' + fmtD(p.asOf) + ' · log ' + fmtD(p.stmt.end) + ' for the exact amount</span>';
+  return '<span style="color:var(--warn)">no check-ins for this statement</span>';
+}
+function billGuide(b, t, budget){
+  var open = b.parts.filter(function(p){ return t <= p.stmt.end; });
+  var room = round2(budget - b.total);
+  if (!open.length) return { tone: room >= 0 ? 'good' : 'bad', html: 'All statements are in: <b>' + money(Math.abs(room)) + (room >= 0 ? ' under' : ' over') + '</b> budget.' };
+  var names = open.map(function(p){ return esc(p.card.name) + (t < p.stmt.start ? ' (' + fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end) + ')' : ' (until ' + fmtD(p.stmt.end) + ')'); }).join(' and ');
+  var lastEnd = open.map(function(p){ return p.stmt.end; }).sort(function(a, b){ return a - b; }).pop();
+  var daysLeft = daysBetween(t, lastEnd) + 1;
+  if (room <= 0) return { tone:'bad', html:'<b>' + money(-room) + ' over</b> already. Anything more on ' + names + ' adds to it.' };
+  var tone = room < budget * 0.1 ? 'warn' : 'good';
+  if (daysLeft >= 7) return { tone:tone, html:'<b>' + money(room) + ' left.</b> Keep spending on ' + names + ' under about <b>' + money(room / (daysLeft / 7)) + ' a week</b>.' };
+  return { tone:tone, html:'<b>' + money(room) + ' left</b> to spend on ' + names + '.' };
+}
+function billDates(b){
+  var seen = {};
+  return b.parts.map(function(p){ return p.payDate; }).sort(function(a, c){ return a - c; })
+    .filter(function(d){ var k = ymd(d); if (seen[k]) return false; seen[k] = 1; return true; });
+}
+function billRows(b, t){
+  var multi = billDates(b).length > 1;
+  return b.parts.map(function(p){
+    return '<div class="row"><span class="k" style="display:flex;align-items:flex-start;color:var(--text)"><span class="sw" style="background:' + cardColor(p.i) + ';margin-top:6px"></span><span>' + esc(p.card.name) +
+      '<span class="sub muted">' + fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end) + ' · ' + partStatus(p, t) + (multi ? ' · pay ' + fmtD(p.payDate) : '') + '</span></span></span><span class="v">' + money(p.amt) + '</span></div>';
+  }).join('');
+}
+function billBar(b, budget){
+  if (!(budget > 0)) return '';
+  var scale = Math.max(budget, b.total, 1);
+  return stackHTML(state.cards.map(function(c, i){ var p = b.parts.find(function(x){ return x.i === i; }); return p ? p.amt : 0; }), scale, 'lg', b.total > budget ? budget / scale * 100 : null) +
+    '<div class="legend"><span>' + Math.round(b.total / budget * 100) + '% of ' + money(budget) + '</span><span>' + (b.total <= budget ? money(budget - b.total) + ' left' : money(b.total - budget) + ' over') + '</span></div>';
+}
+
+function billsHTML(){
+  var today = todayStr(), t = parseYmd(today), budget = state.combined.budget;
+  var h = installBanner();
+  state.cards.forEach(function(card){ h += finalNudge(card, cycleFor(today, card.startDay), today); });
+  var missing = state.cards.filter(function(c){ return !(c.payDay > 0); });
+  if (missing.length === state.cards.length) {
+    return h + '<section class="card"><div class="label">Budget per payment</div><p class="small muted" style="margin:6px 0 10px">Add the day you pay each card and this tab tracks the total you\'ll pay each month against your budget.</p>' +
+      '<button class="btn" data-act="tab" data-tab="settings">Add pay days in Settings</button></section>';
+  }
+  var b = nextBill(today), nb = shiftBill(b, 1);
+  var dates = billDates(b), pending = dates.filter(function(d){ return d >= t; });
+  var until = daysBetween(t, pending.length ? pending[0] : b.payDate);
+  h += '<section class="cycle-head"><div class="eyebrow">Next payment · all cards</div><div class="cycle-range">' +
+       (dates.length === 1 ? fmtDW(dates[0]) : dates.map(function(d){ return fmtD(d); }).join(' & ')) + '</div>' +
+       '<div class="muted small">' + (dates.length > 1 && pending.length ? 'Next one ' : '') + (until === 0 ? 'today' : 'in ' + until + ' day' + (until === 1 ? '' : 's')) +
+       (budget > 0 ? ' · budget ' + money(budget) + ' per month\'s payments' : '') + '</div></section>';
+
+  /* tiles for the next payment */
+  h += '<section class="tiles">' + b.parts.map(function(p){
+    var paid = t > p.payDate;
+    return '<div class="card tile"><div class="tl"><span class="sw" style="background:' + cardColor(p.i) + '"></span><span class="nm">' + esc(p.card.name) + '</span></div>' +
+      '<div class="tv">' + money(p.amt) + '</div><div class="ts">' + fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end) + '<br>' + partStatus(p, t) +
+      '<br><b style="font-weight:600;color:' + (paid ? 'var(--good)' : 'var(--text)') + '">' + (paid ? 'Paid ' : 'Pay ') + fmtD(p.payDate) + '</b></div></div>';
+  }).join('');
+  var g = budget > 0 ? billGuide(b, t, budget) : null;
+  h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) +
+       (g ? '<div class="status ' + g.tone + '" style="margin-bottom:0"><span class="dot"></span><div>' + g.html + '</div></div>' : '') + '</div></section>';
+
+  if (missing.length) h += '<section class="card"><p class="small" style="margin:0">' + missing.map(function(c){ return esc(c.name); }).join(', ') + ' ' + (missing.length === 1 ? 'has' : 'have') +
+    ' no pay day yet, so ' + (missing.length === 1 ? 'it isn\'t' : 'they aren\'t') + ' included.</p><button class="btn ghost" data-act="tab" data-tab="settings">Add in Settings</button></section>';
+
+  /* where spending made today ends up */
+  h += '<section class="card"><div class="label">Spending today goes on</div><div class="rows">' + state.cards.map(function(card, i){
+    if (!(card.payDay > 0)) return '';
+    var cyc = cycleFor(today, card.startDay), pd = payDateIn(cycleFor(ymd(addDays(cyc.end, 1)), card.startDay), card.payDay);
+    var isNext = ymd(pd) === ymd(b.parts.find(function(p){ return p.i === i; }) ? b.parts.find(function(p){ return p.i === i; }).payDate : new Date(0));
+    return '<div class="row"><span class="k" style="display:flex;align-items:center;color:var(--text)"><span class="sw" style="background:' + cardColor(i) + '"></span>' + esc(card.name) + '</span>' +
+      '<span class="v">' + fmtD(pd) + ' payment<span class="sub muted">' + (isNext ? 'this one · ' : 'the one after · ') + 'statement closes ' + fmtD(cyc.end) + '</span></span></div>';
+  }).join('') + '</div></section>';
+
+  /* the payment after */
+  var g2 = budget > 0 ? billGuide(nb, t, budget) : null;
+  var nd = billDates(nb);
+  h += '<section class="card"><div class="label">Then · ' + (nd.length === 1 ? fmtDW(nd[0]) : nd.map(function(d){ return fmtD(d); }).join(' & ')) + '</div><div class="rows">' + billRows(nb, t) +
+       '<div class="row"><span class="k" style="font-weight:700;color:var(--text)">So far</span><span class="v" style="font-size:20px;font-weight:700">' + money(nb.total) + '</span></div></div>' +
+       billBar(nb, budget) + (g2 ? '<div class="status ' + g2.tone + '" style="margin-bottom:0"><span class="dot"></span><div>' + g2.html + '</div></div>' : '') + '</section>';
+
+  if (!(budget > 0)) {
+    h += '<section class="card"><div class="label">Set a budget per payment</div><form data-form="combined">' + combinedFields() +
+         '<button class="btn primary block" style="margin-top:16px">Save budget</button></form></section>';
+  }
+
+  /* last six weeks of spending, all cards */
+  var cache = {}; state.cards.forEach(function(c){ cache[c.id] = allocations(c); });
+  var thisWk = weekEnd(t), keys = [];
+  for (var k = 5; k >= 0; k--) keys.push(ymd(addDays(thisWk, -7 * k)));
+  var weeks = {}; keys.forEach(function(k){ weeks[k] = state.cards.map(function(){ return 0; }); });
+  state.cards.forEach(function(card, i){ cache[card.id].forEach(function(x){ var wk = ymd(weekEnd(parseYmd(x.d))); if (weeks[wk]) weeks[wk][i] += x.a; }); });
+  var wl = keys.map(function(k){ return { key:k, parts:weeks[k], total: round2(weeks[k].reduce(function(a, c){ return a + c; }, 0)) }; });
+  if (wl.some(function(w){ return w.total !== 0; })) {
+    var maxW = Math.max.apply(null, wl.map(function(w){ return w.total; }).concat([1]));
+    h += '<section class="card"><div class="label">Spending by week</div><div class="bars">' + wl.map(function(w){
+      return '<div class="bar"><span class="muted">to ' + fmtD(w.key) + '</span>' + stackHTML(w.parts, maxW) + '<span class="amt">' + money(w.total) + '</span></div>';
+    }).join('') + '</div>' + keysHTML() + '<p class="small muted" style="margin:10px 0 0">Weeks run Monday to Sunday; the last row is this week. Spending between check-ins is spread evenly over those days.</p></section>';
+  }
+
+  h += '<button class="btn primary block" data-act="checkinAll">Check in all cards</button>' +
+       '<p class="next muted center">Next check-in: ' + nextSunday(today, state.checkins.some(function(c){ return c.date === today; }) ? today : null) + '</p>';
+
+  /* past payments, newest first */
+  var firstDate = state.checkins.map(function(c){ return c.date; }).sort()[0];
+  if (firstDate) {
+    var fd = parseYmd(firstDate), pb = billFor(fd.getFullYear(), fd.getMonth()), past = [];
+    while (pb.y * 12 + pb.m < b.y * 12 + b.m) { if (pb.parts.some(function(p){ return p.asOf; })) past.push(pb); pb = shiftBill(pb, 1); }
+    past.reverse();
+    if (past.length) {
+      var maxP = Math.max.apply(null, past.map(function(x){ return Math.max(x.total, budget); }));
+      h += '<section class="card"><div class="label">Past payments</div>' + past.map(function(x){
+        var over = x.total > budget;
+        return '<div class="pm"><div class="pm-top"><span class="cyc-range small">' + esc(billLabel(x)) + '</span><span class="v" style="font-weight:700">' + money(x.total) +
+          (budget > 0 ? ' <span class="small ' + (over ? 'up' : 'down') + '">' + money(Math.abs(budget - x.total)) + (over ? ' over' : ' under') + '</span>' : '') + '</span></div>' +
+          stackHTML(state.cards.map(function(c, i){ var p = x.parts.find(function(q){ return q.i === i; }); return p ? p.amt : 0; }), maxP, '', budget > 0 ? budget / maxP * 100 : null) +
+          '<div class="small muted" style="margin-top:6px">' + x.parts.map(function(p){ return esc(p.card.name) + ' ' + money(p.amt) + ' (' + fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end) + (p.final ? '' : ', partial') + ')'; }).join(' · ') + '</div></div>';
+      }).join('') + keysHTML() + '</section>';
+    }
+  }
+  return h;
+}
+
+function combinedHTML(){
+  if (budgetBasis() === 'pay') return billsHTML();
+  var today = todayStr(), t = parseYmd(today), budget = state.combined.budget;
+  var per = cycleFor(today, combinedStart());
+  var dayN = daysBetween(per.start, t) + 1, left = per.days - dayN;
+  var h = installBanner();
+  state.cards.forEach(function(card){ h += finalNudge(card, cycleFor(today, card.startDay), today); });
+  var reset = addDays(per.end, 1);
+  h += '<section class="cycle-head"><div class="eyebrow">Budget month · all cards</div><div class="cycle-range">' + esc(cycleLabel(per)) + '</div>' +
+       '<div class="muted small">Day ' + dayN + ' of ' + per.days + ' · ' + (left === 0 ? 'last day' : 'ends ' + fmtDW(per.end)) + ' · resets ' + fmtDW(reset) + '</div></section>';
+
+  var cache = {}; state.cards.forEach(function(c){ cache[c.id] = allocations(c); });
+  var cur = combinedFor(per, cache);
+  var nextLine = '<button class="btn primary block" data-act="checkinAll">Check in all cards</button>' +
+                 '<p class="next muted center">Next check-in: ' + nextSunday(today, cur.latest === today ? today : null) + '</p>';
+
+  /* pace numbers, shared by the total tile and the budget card */
+  var total = cur.total, asOf = cur.asOf ? parseYmd(cur.asOf) : null, dayOf = 1, daysAfter = 0, expected = 0, tone = '';
+  if (budget > 0 && asOf) {
+    dayOf = Math.max(1, daysBetween(per.start, asOf) + 1); daysAfter = Math.max(0, daysBetween(asOf, per.end));
+    expected = budget * dayOf / per.days;
+    tone = total <= expected ? 'good' : total <= expected * 1.1 ? 'warn' : 'bad';
+  }
+
+  /* next payment: goes to the top once every statement in it has closed (e.g. the 9th to the 15th) */
+  var pays = state.cards.map(function(c){ return nextPayment(c, today); }).filter(Boolean);
+  var payTop = pays.length > 0 && pays.every(function(p){ return p.status !== 'open' || p.closesToday; });
+  var payH = paymentHTML(pays);
+  if (payTop) h += payH;
+
+  /* tiles: each card so far + total */
+  h += '<section class="tiles">' + cur.rows.map(function(r){
+    var sub = !r.current ? '<span style="color:var(--warn)">no check-in yet this month</span>' : 'as of ' + fmtD(r.last);
+    var pct = total > 0 && r.current ? Math.round(r.amt / total * 100) + '% · ' : '';
+    return '<div class="card tile"><div class="tl"><span class="sw" style="background:' + cardColor(r.i) + '"></span><span class="nm">' + esc(r.card.name) + '</span></div>' +
+           '<div class="tv">' + money(r.amt) + '</div><div class="ts">' + pct + sub + '</div></div>';
+  }).join('');
+  var scale = Math.max(budget, total, 1);
+  h += '<div class="card tile total"><div class="tl">Total so far · all cards</div><div class="tv">' + money(total) + '</div>' +
+       (budget > 0
+         ? stackHTML(cur.rows.map(function(r){ return r.amt; }), scale, 'lg', asOf ? expected / scale * 100 : null) +
+           '<div class="legend"><span>' + Math.round(total / budget * 100) + '% of ' + money(budget) + '</span><span>' + (total <= budget ? money(budget - total) + ' left' : money(total - budget) + ' over') + '</span></div>'
+         : '') +
+       '<div class="ts" style="margin-top:6px">Counts ' + fmtD(per.start) + ' – ' + fmtD(per.end) + ', then starts again from $0 on ' + fmtD(reset) + '.</div></div></section>';
+
+  if (!payTop) h += payH;
+
+  if (!(budget > 0)) {
+    h += '<section class="card"><div class="label">Set a combined budget</div>' +
+      '<p class="small muted" style="margin:6px 0 0">One monthly spending limit across all your cards, even though each card closes on a different day.</p>' +
+      '<form data-form="combined">' + combinedFields() + '<button class="btn primary block" style="margin-top:16px">Save budget</button></form></section>';
+  }
+
+  if (budget > 0 && asOf) {
+
+    var ahead = round2(expected - total), remaining = round2(budget - total);
+    h += '<section class="card"><div class="label">Budget · ' + money(budget) + '</div>' +
+         '<div class="status ' + tone + '"><span class="dot"></span><div><b>' + money(Math.abs(ahead)) + (tone === 'good' ? ' under' : ' over') + ' pace.</b> By ' + fmtD(asOf) + ' you\'d planned to spend about ' + money(expected) + '.</div></div><div class="rows">';
+    if (remaining <= 0) h += '<div class="row"><span class="k">Over budget by</span><span class="v up">' + money(-remaining) + '</span></div>';
+    else if (daysAfter >= 7) h += '<div class="row"><span class="k">To stay on budget, keep each week under</span><span class="v">' + money(remaining / (daysAfter / 7)) + '</span></div>' +
+                                  '<div class="row"><span class="k">Left this month</span><span class="v">' + money(remaining) + '</span></div>';
+    else h += '<div class="row"><span class="k">Left before ' + fmtD(per.end) + '</span><span class="v">' + money(remaining) + '</span></div>';
+    h += '<div class="row"><span class="k">Even weekly budget</span><span class="v">' + money(budget * 7 / per.days) + '</span></div>' +
+         '<div class="row"><span class="k">At this pace you\'ll finish near</span><span class="v">' + money(total / dayOf * per.days) + '</span></div></div></section>';
+
+    var maxW = Math.max.apply(null, cur.weeks.map(function(w){ return w.total; }).concat([1]));
+    h += '<section class="card"><div class="label">Week by week</div><div class="bars">' + cur.weeks.map(function(w){
+      return '<div class="bar"><span class="muted">to ' + fmtD(w.key) + '</span>' + stackHTML(w.parts, maxW) + '<span class="amt">' + money(w.total) + '</span></div>';
+    }).join('') + '</div>' + keysHTML() + '<p class="small muted" style="margin:10px 0 0">Weeks run Monday to Sunday. Spending between check-ins is spread evenly over those days.</p></section>';
+  }
+  h += nextLine;
+
+  /* past budget months, newest first */
+  var firstDate = state.checkins.map(function(c){ return c.date; }).sort()[0];
+  if (firstDate) {
+    var past = [], p = cycleFor(firstDate, combinedStart());
+    while (p.key < per.key) { past.push({ per:p, data:combinedFor(p, cache) }); p = cycleFor(ymd(addDays(p.end, 1)), combinedStart()); }
+    past = past.filter(function(x){ return x.data.asOf; }).reverse();
+    if (past.length) {
+      var maxP = Math.max.apply(null, past.map(function(x){ return Math.max(x.data.total, budget); }));
+      h += '<section class="card"><div class="label">Past months</div>' + past.map(function(x){
+        var d = x.data, over = d.total > budget;
+        return '<div class="pm"><div class="pm-top"><span class="cyc-range small">' + esc(cycleLabel(x.per)) + '</span><span class="v" style="font-weight:700">' + money(d.total) +
+          (budget > 0 ? ' <span class="small ' + (over ? 'up' : 'down') + '">' + money(Math.abs(budget - d.total)) + (over ? ' over' : ' under') + '</span>' : '') + '</span></div>' +
+          stackHTML(d.rows.map(function(r){ return r.amt; }), maxP, '', budget > 0 ? budget / maxP * 100 : null) +
+          '<div class="small muted" style="margin-top:6px">' + d.rows.map(function(r){ return esc(r.card.name) + ' ' + money(r.amt); }).join(' · ') + '</div></div>';
+      }).join('') + keysHTML() + (budget > 0 ? '<p class="small muted" style="margin:10px 0 0">The line marks your current budget of ' + money(budget) + '.</p>' : '') + '</section>';
+    }
+  }
+  return h;
+}
+
+/* ---------- check in all cards at once ---------- */
+function openMulti(){
+  var today = todayStr();
+  sheet = { multi:true, asks:{} };
+  $('#sheetRoot').innerHTML = '<div class="backdrop" data-act="closeBg"><form class="sheet" data-form="multi" novalidate>' +
+    '<header><h2>Check in all cards</h2><button type="button" class="btn ghost" data-act="close">Cancel</button></header>' +
+    '<label class="f">Date<input type="date" name="date" value="' + today + '" max="' + today + '" required></label>' +
+    state.cards.map(function(card, i){
+      return '<div class="mcard"><div class="mhead"><span class="sw" style="background:' + cardColor(i) + '"></span><b>' + esc(card.name) + '</b><span class="muted small">&nbsp;· limit ' + money(card.limit) + '</span></div>' +
+        '<label class="f">' + (card.mode === 'balance' ? 'Current balance' : 'Available credit') + '<input name="v_' + card.id + '" inputmode="decimal" placeholder="Leave blank to skip" autocomplete="off"></label>' +
+        '<div data-ask="' + card.id + '"></div>' +
+        '<div class="preview small" data-pv="' + card.id + '"></div></div>';
+    }).join('') +
+    '<div class="preview" id="mtotal" aria-live="polite"></div>' +
+    '<button class="btn primary block" style="margin-top:14px">Save check-ins</button>' +
+    '<p class="small muted center">Each card uses the reading type set in Settings.</p></form></div>';
+  document.body.style.overflow = 'hidden';
+  var f = $('form[data-form="multi"]');
+  f.addEventListener('input', function(e){
+    if (e.target.name === 'date') multiAsks(f);
+    updateMulti(f);
+  });
+  multiAsks(f); updateMulti(f);
+}
+function multiAsks(f){
+  var d = f.elements.date.value || todayStr();
+  state.cards.forEach(function(card){
+    var ask = needsStmt(card, d), prev = sheet.asks[card.id];
+    if (!(ask && prev && ask.pc.key === prev.pc.key)) f.querySelector('[data-ask="' + card.id + '"]').innerHTML = ask ? askHTML(card, ask, 's_' + card.id) : '';
+    sheet.asks[card.id] = ask;
+  });
+}
+function askValOf(f, card){ var el = f.elements['s_' + card.id]; return el ? parseMoney(el.value) : NaN; }
+function updateMulti(f){
+  var d = f.elements.date.value || todayStr(), tot = 0, any = false;
+  state.cards.forEach(function(card){
+    var prior = priorInCycle(card, d, null), cyc = cycleFor(d, card.startDay);
+    var v = parseMoney(f.elements['v_' + card.id].value), c = carriedFor(card, d, null, askValOf(f, card));
+    var pv = f.querySelector('[data-pv="' + card.id + '"]');
+    if (isNaN(v)) { pv.innerHTML = '<span class="muted">Skipped</span>'; return; }
+    any = true;
+    var spent = spentOf({ mode: card.mode || 'available', value: v, limit: card.limit, carried: c });
+    var delta = prior.length ? round2(spent - spentOf(prior[prior.length - 1])) : spent;
+    tot += delta;
+    pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b> · ' + (prior.length ? signed(delta) + ' since ' + fmtD(prior[prior.length - 1].date) : 'since ' + fmtD(cyc.start)) +
+      (prior.length && delta < 0 ? '<div style="color:var(--warn)">Lower than last time: a refund or a payment toward this cycle?</div>' : '');
+  });
+  $('#mtotal').innerHTML = any ? 'Added across cards since each one\'s last check-in: <b>' + money(round2(tot)) + '</b>' : '<span class="muted">Enter at least one card.</span>';
+}
+function saveMulti(f){
+  var d = f.elements.date.value, n = 0;
+  if (!d) return toast('Pick a date');
+  if (d > todayStr()) return toast("Date can't be in the future");
+  var recs = [];
+  for (var i = 0; i < state.cards.length; i++) {
+    var card = state.cards[i], v = parseMoney(f.elements['v_' + card.id].value), av = askValOf(f, card);
+    if (isNaN(v)) continue;
+    if (v < 0) return toast('Check the amount for ' + card.name);
+    if (!isNaN(av) && av < 0) return toast('Check the statement balance for ' + card.name);
+    recs.push({ id: uid(), cardId: card.id, created: Date.now() + i, limit: card.limit, target: card.target || 0, date: d,
+                mode: card.mode || 'available', value: round2(v), carried: carriedFor(card, d, null, av), note: '', auto: true, _card: card, _av: av });
+  }
+  if (!recs.length) return toast('Enter at least one card');
+  recs.forEach(function(r){ var ask = needsStmt(r._card, d); if (ask) recordStmt(r._card, ask, isNaN(r._av) ? 0 : r._av); delete r._card; delete r._av; });
+  state.checkins = state.checkins.concat(recs); n = recs.length;
+  save(); closeSheet(); render(); toast('Saved ' + n + ' check-in' + (n === 1 ? '' : 's'));
 }
 
 /* ---------- backup ---------- */
@@ -588,7 +1108,7 @@ function shareOrDownload(name, text, type){
   } catch (e) {}
   download(name, text, type);
 }
-function exportJSON(){ shareOrDownload('card-cycle-backup-' + todayStr() + '.json', JSON.stringify(state, null, 2), 'application/json'); }
+function exportJSON(){ shareOrDownload('weekly-expense-tracker-backup-' + todayStr() + '.json', JSON.stringify(state, null, 2), 'application/json'); }
 function exportCSV(){
   var q = function(s){ s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   var rows = [['card','cycle_start','cycle_end','date','entered_as','amount_entered','credit_limit','unpaid_prior_statement','spent_this_cycle','change_since_previous','note']];
@@ -599,7 +1119,7 @@ function exportCSV(){
       });
     });
   });
-  shareOrDownload('card-cycle-' + todayStr() + '.csv', rows.map(function(r){ return r.map(q).join(','); }).join('\n'), 'text/csv');
+  shareOrDownload('weekly-expense-tracker-' + todayStr() + '.csv', rows.map(function(r){ return r.map(q).join(','); }).join('\n'), 'text/csv');
 }
 $('#importFile').addEventListener('change', function(e){
   var file = e.target.files && e.target.files[0]; if (!file) return;
@@ -610,7 +1130,7 @@ $('#importFile').addEventListener('change', function(e){
       if (!obj || !Array.isArray(obj.cards) || !Array.isArray(obj.checkins)) throw new Error('bad');
       if (!confirm('Replace everything on this phone with this backup (' + obj.cards.length + ' card' + (obj.cards.length === 1 ? '' : 's') + ', ' + obj.checkins.length + ' check-ins)?')) return;
       state = normalize(obj); save(); view = 'now'; render(); toast('Backup restored');
-    } catch (err) { toast("That file isn't a Card Cycle backup"); }
+    } catch (err) { toast("That file isn't a Weekly Expense Tracker backup"); }
     e.target.value = '';
   };
   r.readAsText(file);
@@ -624,7 +1144,8 @@ document.addEventListener('click', function(e){
   e.preventDefault();
   switch (act) {
     case 'tab': view = el.dataset.tab; render(); break;
-    case 'checkin': openCheckin({ date: el.dataset.date }); break;
+    case 'checkin': openCheckin({ date: el.dataset.date, cardId: el.dataset.card }); break;
+    case 'checkinAll': openMulti(); break;
     case 'edit': openCheckin({ id: el.dataset.id }); break;
     case 'close': closeSheet(); break;
     case 'deleteCI':
@@ -653,12 +1174,22 @@ document.addEventListener('change', function(e){
 document.addEventListener('submit', function(e){
   var f = e.target; e.preventDefault();
   if (f.dataset.form === 'checkin') return saveCheckin(f);
+  if (f.dataset.form === 'multi') return saveMulti(f);
+  if (f.dataset.form === 'combined') {
+    var b = parseMoney(f.elements.budget.value), cs = Math.round(Number(f.elements.cstart.value));
+    if (!(cs >= 1 && cs <= 31)) return toast('Budget month day must be 1–31');
+    if (!isNaN(b) && b < 0) return toast('Budget can\'t be negative');
+    state.combined.budget = isNaN(b) ? 0 : round2(b); state.combined.startDay = cs;
+    if (f.elements.basis) state.combined.basis = f.elements.basis.value;
+    save(); render(); toast(state.combined.budget ? 'Budget saved' : 'Combined budget turned off');
+    return;
+  }
   if (f.dataset.form === 'card' || f.dataset.form === 'newcard') {
     var data = readCardForm(f); if (!data) return;
     if (f.dataset.new === '1' || f.dataset.form === 'newcard') {
       var c = Object.assign({ id: uid() }, data); state.cards.push(c); state.activeCardId = c.id;
       if (f.dataset.form === 'newcard') closeSheet();
-      save(); view = 'now'; render(); toast(c.name + ' added');
+      save(); view = state.cards.length > 1 ? 'combined' : 'now'; render(); toast(c.name + ' added');
     } else {
       Object.assign(activeCard(), data); save(); render(); toast('Saved');
     }
@@ -668,8 +1199,7 @@ function openAddCard(){
   $('#sheetRoot').innerHTML = '<div class="backdrop" data-act="closeBg"><form class="sheet" data-form="newcard"><header><h2>Add a card</h2><button type="button" class="btn ghost" data-act="close">Cancel</button></header>' +
     cardFields(null) + '<button class="btn primary block" style="margin-top:16px">Add card</button></form></div>';
   document.body.style.overflow = 'hidden';
-  var f = $('form[data-form="newcard"]'), sd = f.elements.startDay, hint = $('#cycleHint', f);
-  var upd = function(){ hint.textContent = cycleHintText(sd.value); }; sd.addEventListener('input', upd); upd();
+  wireHints();
 }
 var tt;
 function toast(msg){ var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove('show'); }, 2200); }
@@ -682,7 +1212,7 @@ if (navigator.storage && navigator.storage.persist) { try { navigator.storage.pe
 if ('serviceWorker' in navigator && location.protocol !== 'file:') { navigator.serviceWorker.register('sw.js').catch(function(){}); }
 
 /* expose pure functions for testing */
-window.__cc = { cycleFor: cycleFor, spentOf: spentOf, ymd: ymd };
+window.__cc = { cycleFor: cycleFor, spentOf: spentOf, ymd: ymd, allocations: allocations, combinedFor: combinedFor, state: function(){ return state; } };
 render();
 })();
 </script>

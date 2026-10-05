@@ -1,4 +1,4 @@
-# Card Cycle — setup guide
+# Weekly Expense Tracker — setup guide
 
 A small iPhone app for weekly credit card check-ins, grouped by statement cycle (e.g. the 10th to the 9th).
 It's a web app you install on your Home Screen. No Mac, no App Store, no server, and your numbers never leave your phone.
@@ -36,7 +36,7 @@ The repo holds only the app's code. Your spending data is stored on your phone, 
 
 1. Open that link in **Safari** (it must be Safari).
 2. Tap **Share** → **Add to Home Screen** → **Add**.
-3. From now on, open **Card Cycle from the Home Screen icon**. The installed app keeps its own data, separate from Safari.
+3. From now on, open **Weekly Expense Tracker from the Home Screen icon**. The installed app keeps its own data, separate from Safari.
 4. Set up your card: name, credit limit, cycle start day (`10` for a 10th–9th cycle), and optionally a spending target.
    Use **Settings → Add another card** for a second card with its own cycle.
 
@@ -49,23 +49,71 @@ Prefer Shortcuts? Shortcuts → Automation → **+** → Time of Day → Sunday,
 
 ## 5. Each Sunday
 
-Open your card's app, read **available credit** (or **current balance**, your choice per check-in), and type it in. Card Cycle shows:
+Open your card's app, read **available credit** (or **current balance**, your choice per check-in), and type it in. Weekly Expense Tracker shows:
 
 - **Spent this cycle** = limit − available credit (or the balance), minus anything that isn't this cycle's spending
 - **This week** vs **the week before**
 - With a target: whether you're over or under pace, and the weekly amount that keeps you on target for the rest of the cycle
 - **History**: every cycle with its total and each check-in; tap a check-in to edit it
 
-### The one field to understand: "Unpaid from last statement"
+### Bills you haven't paid yet are handled for you
 
-Right after your statement closes, your balance still includes last cycle's charges until you pay them.
-Enter that unpaid amount and the app subtracts it, so it isn't counted as new spending. Once your statement is paid, it's 0.
-If you pay extra toward the current cycle's charges, enter that payment as a negative number.
+Between a statement closing and the day you pay it, your card balance still includes that bill.
+If you set **I pay this card on day** in Settings, the app leaves that bill out of your new spending automatically
+(using the statement total it has on record) and stops doing so from your pay day.
+
+The only time it asks is when it has no record of a statement you haven't paid yet, usually your first week:
+it shows one extra box, "[Card] statement balance, [dates]". Type the balance from your statement, or leave it blank if it's paid.
 
 ### Getting an exact final total
 
 Sunday check-ins rarely land on statement day. For an exact cycle total, add a check-in dated the last day of the cycle (e.g. the 9th).
 The app reminds you to do this for a week after each cycle closes.
+
+## Budget per payment (default once pay days are set)
+
+Set **I pay this card on day** on every card (e.g. 15), then a budget in **Settings → Combined budget** with
+**Budget counts: What I pay each month**. The All cards tab then tracks each month's total payment:
+
+- **Tiles** for each card's statement in the next payment, and a **Total to pay** tile with the budget bar and how much room is left
+  (and roughly how much a week, on which cards, until their statements close).
+- **Spending today goes on**: which payment a purchase made today will be part of. With Amex closing on the 9th and
+  Wealthsimple on the 24th, both paid on the 15th: Amex spending from the 10th and Wealthsimple spending from the 25th land on the
+  following month's payment.
+- **Then**: the payment after next, already building up.
+- **Past payments**: every month's total paid, split by card.
+
+Example (Amex 10th–9th, Wealthsimple 25th–24th, both paid on the 15th):
+the Oct 15 payment = Amex Sep 10 – Oct 9 + Wealthsimple Aug 25 – Sep 24.
+
+## One budget across both cards (by spending date)
+
+Choose **Budget counts: What I spend in a budget month** to budget by when you spend instead of when you pay.
+
+Once you have two or more cards, an **All cards** tab appears.
+
+1. Set a **monthly budget across all cards** (e.g. 3250) and the day your **budget month** starts.
+   It defaults to your first card's cycle day; keep it at 10 to line up with the Amex.
+2. Each Sunday, tap **Check in all cards** and enter each card's number on one screen. Leave a card blank to skip it.
+
+The tab shows the combined total for the budget month, a per-card split, whether you're over or under pace,
+the weekly amount that keeps you on budget, stacked week-by-week bars, and every past month.
+
+**How cards with different cycles add up.** Each check-in tells the app how much a card went up since its last check-in.
+That amount is spread evenly over the days it covers, and only the days inside the budget month count toward it.
+So a card that closes on the 21st still lands in the right budget month, nothing is counted twice, and nothing is lost between months.
+The card whose cycle matches the budget month is exact; for the other card, a week that straddles the 10th is split by day.
+
+**Tiles.** The top of the All cards tab shows one tile per card (spent so far this budget month) and a total tile with your budget bar.
+The budget month ends on the day before your start day (the 9th) and everything resets to $0 the next morning (the 10th).
+
+**Next payment.** In Settings, set **I pay this card on day** for each card (e.g. 15 for both).
+The All cards tab then shows which statement each card's next payment covers, the amount, and the total to pay.
+Once every statement in that payment has closed (for an Amex closing on the 9th and payment on the 15th: the 9th through the 15th),
+the panel moves to the top of the screen.
+
+**Keep your totals complete:** when a card's statement closes between two Sundays, add a check-in dated its closing day
+(the app nudges you for a week afterwards). Otherwise the days between your last Sunday and the close aren't counted.
 
 ## Backups
 
@@ -75,5 +123,6 @@ Use **Settings → Export backup** now and then (save to Files or email it to yo
 
 ## Updating the app later
 
-Edit the files, change `card-cycle-v1` to `card-cycle-v2` at the top of `sw.js`, and upload them to the repo again.
+Edit the files, bump the version at the top of `sw.js` (e.g. `expense-tracker-v5` → `expense-tracker-v6`), and upload them to the repo again
+(on the repo page: **Add file → Upload files**, drag them in, **Commit changes** — same-named files are replaced).
 The phone picks up the new version the second time you open the app. Your data isn't affected.
