@@ -160,6 +160,8 @@ nav.tabs button.on{color:var(--accent)}
 .tile.total{grid-column:1/-1}
 .tile.total .tv{font-size:40px;letter-spacing:-.03em}
 .pay{border-color:var(--accent)}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:15px;font-weight:600;cursor:pointer}
+.chk input{width:22px;height:22px;margin:0;flex:none;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -226,7 +228,7 @@ function cycleLabel(c){ return fmtD(c.start) + ' – ' + fmtD(c.end) + ', ' + c.
 function prevCycle(c, startDay){ return cycleFor(ymd(addDays(c.start, -1)), startDay); }
 
 /* ---------- state ---------- */
-function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], combined:{ budget:0, startDay:null }, ui:{ hideInstall:false, skipFinal:{}, stmtSkip:{} } }; }
+function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], combined:{ budget:0, startDay:null }, ui:{ hideInstall:false, skipFinal:{}, stmtSkip:{}, paidEarly:{}, paidNo:{} } }; }
 function normalize(s){
   var b = blank();
   if (!s || typeof s !== 'object') return b;
@@ -237,6 +239,8 @@ function normalize(s){
   b.combined = Object.assign(b.combined, s.combined || {});
   if (!b.ui.skipFinal) b.ui.skipFinal = {};
   if (!b.ui.stmtSkip) b.ui.stmtSkip = {};
+  if (!b.ui.paidEarly) b.ui.paidEarly = {};
+  if (!b.ui.paidNo) b.ui.paidNo = {};
   return b;
 }
 var storageOK = true;
@@ -253,7 +257,7 @@ function load(){
 function refreshAuto(){
   state.cards.forEach(function(card){
     cardCheckins(card).forEach(function(c){
-      if (!c.auto) return;
+      if (!(card.payDay > 0) || c.note === 'Statement balance') return;
       var v = carriedDefault(card, c.date, c.id).v;
       if (v !== '') c.carried = v;
     });
@@ -364,7 +368,7 @@ function nowHTML(card){
   var list = withDeltas(inCycle(card, cyc.key));
   var latest = list[list.length - 1];
   var dayN = daysBetween(cyc.start, t) + 1, left = cyc.days - dayN;
-  var h = installBanner() + finalNudge(card, cyc, today);
+  var h = installBanner() + earlyNudge(card, today) + finalNudge(card, cyc, today);
 
   h += '<section class="cycle-head"><div class="eyebrow">Current cycle</div><div class="cycle-range">' + esc(cycleLabel(cyc)) + '</div>' +
        '<div class="muted small">Day ' + dayN + ' of ' + cyc.days + ' · ' + left + ' day' + (left === 1 ? '' : 's') + ' left · statement closes ' + fmtDW(cyc.end) + '</div></section>';
@@ -584,7 +588,7 @@ function openCheckin(opts){
     '<label class="f">Date<input type="date" name="date" value="' + date + '" max="' + todayStr() + '" required></label>' +
     '<div class="seg" role="tablist"><button type="button" data-mode="available">Available credit</button><button type="button" data-mode="balance">Current balance</button></div>' +
     '<label class="f"><span id="valLabel"></span><input name="value" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (editing ? editing.value : '') + '"></label>' +
-    '<div id="askBox"></div>' +
+    '<div id="askBox"></div><div id="paidBox"></div>' +
     '<label class="f">Note <span class="muted">(optional)</span><input name="note" maxlength="80" value="' + esc(editing ? editing.note : '') + '" placeholder="e.g. flights for December"></label>' +
     '<div class="preview" id="preview" aria-live="polite"></div>' +
     '<button class="btn primary block" style="margin-top:14px">' + (editing ? 'Save changes' : 'Save check-in') + '</button>' +
@@ -593,6 +597,7 @@ function openCheckin(opts){
   document.body.style.overflow = 'hidden';
   var f = $('form[data-form="checkin"]');
   f.addEventListener('input', function(e){ if (e.target.name === 'date') renderAsk(f); updatePreview(f); });
+  f.addEventListener('change', function(e){ if (e.target.type === 'checkbox') updatePreview(f); });
   f.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ sheet.mode = b.dataset.mode; updatePreview(f); }); });
   renderAsk(f);
   updatePreview(f);
@@ -607,6 +612,9 @@ function renderAsk(f){
   var same = ask && sheet.ask && ask.pc.key === sheet.ask.pc.key;
   if (!same) $('#askBox').innerHTML = ask ? askHTML(card, ask, 'stmt') : '';
   sheet.ask = ask;
+  var w = ask ? null : stmtWindow(card, d), wk = w ? w.key : null;
+  if (wk !== sheet.paidKey) $('#paidBox').innerHTML = w ? paidBoxHTML(card, w, 'paid', isPaidEarly(w, d)) : '';
+  sheet.paidKey = wk;
 }
 function updatePreview(f){
   var card = sheetCard();
@@ -616,7 +624,8 @@ function updatePreview(f){
   var prior = priorInCycle(card, d, sheet.id);
   var cyc = cycleFor(d, card.startDay);
   var v = parseMoney(f.elements.value.value);
-  var carried = carriedFor(card, d, sheet.id, f.elements.stmt ? parseMoney(f.elements.stmt.value) : NaN);
+  var paidTick = f.elements.paid ? f.elements.paid.checked : undefined;
+  var carried = carriedFor(card, d, sheet.id, f.elements.stmt ? parseMoney(f.elements.stmt.value) : NaN, paidTick);
   var pv = $('#preview');
   if (isNaN(v)) { pv.innerHTML = '<span class="muted">Spent this cycle will show here.</span>'; return; }
   var spent = spentOf({ mode:sheet.mode, value:v, limit:sheet.limit, carried:carried });
@@ -624,7 +633,7 @@ function updatePreview(f){
   if (prior.length) { var p = spentOf(prior[prior.length - 1]); dropped = spent < p; line = signed(round2(spent - p)) + ' since ' + fmtDW(prior[prior.length - 1].date); }
   else line = 'since the cycle started ' + fmtD(cyc.start);
   var warn = (sheet.mode === 'available' && v > sheet.limit) ? '<div class="small up">That\'s more than your ' + money(sheet.limit) + ' limit — double-check the number.</div>'
-    : dropped ? '<div class="small" style="color:var(--warn)">Lower than last time — usually a refund, or a payment made earlier than your pay day.</div>' : '';
+    : (dropped || spent < 0) ? '<div class="small" style="color:var(--warn)">' + (paidTick === false ? 'Lower than last time. Did you pay your statement early? Tick the box above.' : 'Lower than last time — usually a refund.') + '</div>' : '';
   pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b><div class="small muted">' + line + '</div>' + warn;
 }
 function closeSheet(){ $('#sheetRoot').innerHTML = ''; document.body.style.overflow = ''; sheet = null; }
@@ -636,8 +645,11 @@ function saveCheckin(f){
   if (isNaN(v) || v < 0) return toast('Enter the amount from your card app');
   var askVal = f.elements.stmt ? parseMoney(f.elements.stmt.value) : NaN;
   if (!isNaN(askVal) && askVal < 0) return toast('Statement balance can\'t be negative');
-  var carried = carriedFor(card, d, sheet.id, askVal), ask = needsStmt(card, d);
+  var paidTick = f.elements.paid ? f.elements.paid.checked : undefined;
+  var carried = carriedFor(card, d, sheet.id, askVal, paidTick), ask = needsStmt(card, d);
   if (ask) recordStmt(card, ask, isNaN(askVal) ? 0 : askVal);
+  var w = stmtWindow(card, d);
+  if (w && paidTick !== undefined) setPaid(w.key, d, paidTick);
   var rec;
   if (sheet.id) rec = state.checkins.find(function(c){ return c.id === sheet.id; });
   if (!rec) { rec = { id: uid(), cardId: card.id, created: Date.now(), limit: sheet.limit, target: card.target || 0 }; state.checkins.push(rec); }
@@ -716,6 +728,8 @@ function carriedDefault(card, date, excludeId){
   if (card.payDay) {
     var pd = payDateIn(cyc, card.payDay), pc = prevCycle(cyc, card.startDay);
     if (parseYmd(date) >= pd) return { v:0, hint:'You pay on the ' + ord(card.payDay) + ', so last statement should be paid by now (0). Change it if you didn\'t pay in full.' };
+    var pe = state.ui.paidEarly[card.id + pc.key];
+    if (pe && date >= pe) return { v:0, hint:'Statement paid early.' };
     var tot = cycleTotal(card, pc);
     if (tot) return { v:tot.amt, hint:'Filled in with your ' + fmtD(pc.start) + ' – ' + fmtD(pc.end) + ' statement' + (tot.final ? '' : ' (as of ' + fmtD(tot.date) + ')') + ', which you pay on ' + fmtD(pd) + '. Set to 0 if you\'ve already paid it.' };
   }
@@ -727,18 +741,60 @@ function carriedDefault(card, date, excludeId){
 function needsStmt(card, date){
   if (!(card.payDay > 0)) return null;
   var cyc = cycleFor(date, card.startDay), pd = payDateIn(cyc, card.payDay), pc = prevCycle(cyc, card.startDay);
-  if (parseYmd(date) >= pd || cycleTotal(card, pc) || state.ui.stmtSkip[card.id + pc.key]) return null;
+  var pe = state.ui.paidEarly[card.id + pc.key];
+  if (parseYmd(date) >= pd || cycleTotal(card, pc) || state.ui.stmtSkip[card.id + pc.key] || (pe && date >= pe)) return null;
   return { pc:pc, pd:pd };
+}
+/* Paying a statement before the pay day: between a statement closing and the pay day the app
+   assumes the bill is still on the card. A tick box ("I've already paid it") switches that off. */
+function stmtWindow(card, date){
+  if (!(card.payDay > 0)) return null;
+  var cyc = cycleFor(date, card.startDay), pd = payDateIn(cyc, card.payDay);
+  if (parseYmd(date) >= pd) return null;
+  var pc = prevCycle(cyc, card.startDay);
+  return { pc:pc, pd:pd, key: card.id + pc.key };
+}
+function isPaidEarly(w, date){ var pe = w && state.ui.paidEarly[w.key]; return !!(pe && date >= pe); }
+function setPaid(key, d, on){
+  var cur = state.ui.paidEarly[key];
+  if (on) { if (!cur || d < cur) state.ui.paidEarly[key] = d; }
+  else if (cur && cur <= d) delete state.ui.paidEarly[key];
+}
+function paidBoxHTML(card, w, name, checked){
+  var tot = cycleTotal(card, w.pc);
+  return '<label class="chk"><input type="checkbox" name="' + name + '"' + (checked ? ' checked' : '') + '><span>I\'ve already paid my ' + fmtD(w.pc.start) + ' – ' + fmtD(w.pc.end) + ' statement' +
+    (tot ? ' (' + money(tot.amt) + ')' : '') + '<span class="hint" style="display:block">Due ' + fmtD(w.pd) + '. Tick this if you paid it early, so the payment doesn\'t reduce your spending.</span></span></label>';
+}
+function withoutPaid(key, fn){
+  var s = state.ui.paidEarly[key]; delete state.ui.paidEarly[key];
+  try { return fn(); } finally { if (s) state.ui.paidEarly[key] = s; }
+}
+function earlyNudge(card, today){
+  var w = stmtWindow(card, today);
+  if (!w || state.ui.paidEarly[w.key] || state.ui.paidNo[w.key]) return '';
+  var tot = cycleTotal(card, w.pc), list = withDeltas(inCycle(card, cycleFor(today, card.startDay).key));
+  var hit = list.find(function(x){ return x.first ? x.spent < 0 : (x.delta < 0 && (x.spent < 0 || (tot && -x.delta >= tot.amt * 0.5))); });
+  if (!hit) return '';
+  return '<section class="card nudge"><b>' + esc(card.name) + ': did you pay your ' + fmtD(w.pc.start) + ' – ' + fmtD(w.pc.end) + ' statement early?</b>' +
+    '<p class="small">Your ' + fmtDW(hit.c.date) + ' check-in dropped by ' + money(Math.abs(hit.delta)) + ', which looks like a payment. The app assumes you pay on ' + fmtD(w.pd) +
+    ', so until then it keeps taking that bill off your spending, and your spending shows lower than it really is.</p>' +
+    '<div class="btnrow"><button class="btn primary" data-act="markPaid" data-key="' + w.key + '" data-date="' + hit.c.date + '">Yes, I paid it</button>' +
+    '<button class="btn ghost" data-act="notPaid" data-key="' + w.key + '">No, it was a refund</button></div></section>';
 }
 function askHTML(card, ask, name){
   return '<label class="f">' + esc(card.name) + ' statement balance, ' + fmtD(ask.pc.start) + ' – ' + fmtD(ask.pc.end) +
     '<input name="' + name + '" inputmode="decimal" placeholder="0.00" autocomplete="off">' +
     '<div class="hint">Asked once. This bill is due ' + fmtD(ask.pd) + ', so it shouldn\'t count as new spending. Find it on your statement. Leave blank if you\'ve already paid it.</div></label>';
 }
-function carriedFor(card, date, excludeId, askVal){
-  if (needsStmt(card, date)) return isNaN(askVal) ? 0 : round2(askVal);
-  var v = carriedDefault(card, date, excludeId).v;
-  return v === '' ? 0 : v;
+function carriedFor(card, date, excludeId, askVal, paidTick){
+  if (paidTick === true) return 0;
+  var calc = function(){
+    if (needsStmt(card, date)) return isNaN(askVal) ? 0 : round2(askVal);
+    var v = carriedDefault(card, date, excludeId).v;
+    return v === '' ? 0 : v;
+  };
+  var w = stmtWindow(card, date);
+  return (paidTick === false && w) ? withoutPaid(w.key, calc) : calc();
 }
 function recordStmt(card, ask, val){
   if (val > 0) state.checkins.push({ id: uid(), cardId: card.id, created: Date.now() - 1, limit: card.limit, target: card.target || 0,
@@ -847,7 +903,7 @@ function billBar(b, budget){
 function billsHTML(){
   var today = todayStr(), t = parseYmd(today), budget = state.combined.budget;
   var h = installBanner();
-  state.cards.forEach(function(card){ h += finalNudge(card, cycleFor(today, card.startDay), today); });
+  state.cards.forEach(function(card){ h += earlyNudge(card, today) + finalNudge(card, cycleFor(today, card.startDay), today); });
   var missing = state.cards.filter(function(c){ return !(c.payDay > 0); });
   if (missing.length === state.cards.length) {
     return h + '<section class="card"><div class="label">Budget per payment</div><p class="small muted" style="margin:6px 0 10px">Add the day you pay each card and this tab tracks the total you\'ll pay each month against your budget.</p>' +
@@ -863,10 +919,10 @@ function billsHTML(){
 
   /* tiles for the next payment */
   h += '<section class="tiles">' + b.parts.map(function(p){
-    var paid = t > p.payDate;
+    var pe = state.ui.paidEarly[p.card.id + p.stmt.key], early = !!(pe && today >= pe && t <= p.payDate), paid = t > p.payDate || early;
     return '<div class="card tile"><div class="tl"><span class="sw" style="background:' + cardColor(p.i) + '"></span><span class="nm">' + esc(p.card.name) + '</span></div>' +
       '<div class="tv">' + money(p.amt) + '</div><div class="ts">' + fmtD(p.stmt.start) + ' – ' + fmtD(p.stmt.end) + '<br>' + partStatus(p, t) +
-      '<br><b style="font-weight:600;color:' + (paid ? 'var(--good)' : 'var(--text)') + '">' + (paid ? 'Paid ' : 'Pay ') + fmtD(p.payDate) + '</b></div></div>';
+      '<br><b style="font-weight:600;color:' + (paid ? 'var(--good)' : 'var(--text)') + '">' + (early ? 'Paid early' : (paid ? 'Paid ' : 'Pay ') + fmtD(p.payDate)) + '</b></div></div>';
   }).join('');
   var g = budget > 0 ? billGuide(b, t, budget) : null;
   h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) +
@@ -939,7 +995,7 @@ function combinedHTML(){
   var per = cycleFor(today, combinedStart());
   var dayN = daysBetween(per.start, t) + 1, left = per.days - dayN;
   var h = installBanner();
-  state.cards.forEach(function(card){ h += finalNudge(card, cycleFor(today, card.startDay), today); });
+  state.cards.forEach(function(card){ h += earlyNudge(card, today) + finalNudge(card, cycleFor(today, card.startDay), today); });
   var reset = addDays(per.end, 1);
   h += '<section class="cycle-head"><div class="eyebrow">Budget month · all cards</div><div class="cycle-range">' + esc(cycleLabel(per)) + '</div>' +
        '<div class="muted small">Day ' + dayN + ' of ' + per.days + ' · ' + (left === 0 ? 'last day' : 'ends ' + fmtDW(per.end)) + ' · resets ' + fmtDW(reset) + '</div></section>';
@@ -1035,7 +1091,7 @@ function openMulti(){
     state.cards.map(function(card, i){
       return '<div class="mcard"><div class="mhead"><span class="sw" style="background:' + cardColor(i) + '"></span><b>' + esc(card.name) + '</b><span class="muted small">&nbsp;· limit ' + money(card.limit) + '</span></div>' +
         '<label class="f">' + (card.mode === 'balance' ? 'Current balance' : 'Available credit') + '<input name="v_' + card.id + '" inputmode="decimal" placeholder="Leave blank to skip" autocomplete="off"></label>' +
-        '<div data-ask="' + card.id + '"></div>' +
+        '<div data-ask="' + card.id + '"></div><div data-paid="' + card.id + '"></div>' +
         '<div class="preview small" data-pv="' + card.id + '"></div></div>';
     }).join('') +
     '<div class="preview" id="mtotal" aria-live="polite"></div>' +
@@ -1047,6 +1103,7 @@ function openMulti(){
     if (e.target.name === 'date') multiAsks(f);
     updateMulti(f);
   });
+  f.addEventListener('change', function(e){ if (e.target.type === 'checkbox') updateMulti(f); });
   multiAsks(f); updateMulti(f);
 }
 function multiAsks(f){
@@ -1055,14 +1112,20 @@ function multiAsks(f){
     var ask = needsStmt(card, d), prev = sheet.asks[card.id];
     if (!(ask && prev && ask.pc.key === prev.pc.key)) f.querySelector('[data-ask="' + card.id + '"]').innerHTML = ask ? askHTML(card, ask, 's_' + card.id) : '';
     sheet.asks[card.id] = ask;
+    if (!sheet.paidKeys) sheet.paidKeys = {};
+    var w = ask ? null : stmtWindow(card, d), wk = w ? w.key : null;
+    if (wk !== sheet.paidKeys[card.id]) f.querySelector('[data-paid="' + card.id + '"]').innerHTML = w ? paidBoxHTML(card, w, 'p_' + card.id, isPaidEarly(w, d)) : '';
+    sheet.paidKeys[card.id] = wk;
   });
 }
 function askValOf(f, card){ var el = f.elements['s_' + card.id]; return el ? parseMoney(el.value) : NaN; }
+function paidOf(f, card){ var el = f.elements['p_' + card.id]; return el ? el.checked : undefined; }
 function updateMulti(f){
   var d = f.elements.date.value || todayStr(), tot = 0, any = false;
   state.cards.forEach(function(card){
     var prior = priorInCycle(card, d, null), cyc = cycleFor(d, card.startDay);
-    var v = parseMoney(f.elements['v_' + card.id].value), c = carriedFor(card, d, null, askValOf(f, card));
+    var pt = paidOf(f, card);
+    var v = parseMoney(f.elements['v_' + card.id].value), c = carriedFor(card, d, null, askValOf(f, card), pt);
     var pv = f.querySelector('[data-pv="' + card.id + '"]');
     if (isNaN(v)) { pv.innerHTML = '<span class="muted">Skipped</span>'; return; }
     any = true;
@@ -1070,7 +1133,7 @@ function updateMulti(f){
     var delta = prior.length ? round2(spent - spentOf(prior[prior.length - 1])) : spent;
     tot += delta;
     pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b> · ' + (prior.length ? signed(delta) + ' since ' + fmtD(prior[prior.length - 1].date) : 'since ' + fmtD(cyc.start)) +
-      (prior.length && delta < 0 ? '<div style="color:var(--warn)">Lower than last time: a refund or a payment toward this cycle?</div>' : '');
+      ((prior.length && delta < 0) || spent < 0 ? '<div style="color:var(--warn)">' + (pt === false ? 'Lower than last time. Did you pay your statement early? Tick the box above.' : 'Lower than last time — usually a refund.') + '</div>' : '');
   });
   $('#mtotal').innerHTML = any ? 'Added across cards since each one\'s last check-in: <b>' + money(round2(tot)) + '</b>' : '<span class="muted">Enter at least one card.</span>';
 }
@@ -1080,12 +1143,14 @@ function saveMulti(f){
   if (d > todayStr()) return toast("Date can't be in the future");
   var recs = [];
   for (var i = 0; i < state.cards.length; i++) {
-    var card = state.cards[i], v = parseMoney(f.elements['v_' + card.id].value), av = askValOf(f, card);
+    var card = state.cards[i], v = parseMoney(f.elements['v_' + card.id].value), av = askValOf(f, card), pt = paidOf(f, card);
+    var pw = stmtWindow(card, d);
+    if (pw && pt !== undefined) setPaid(pw.key, d, pt);
     if (isNaN(v)) continue;
     if (v < 0) return toast('Check the amount for ' + card.name);
     if (!isNaN(av) && av < 0) return toast('Check the statement balance for ' + card.name);
     recs.push({ id: uid(), cardId: card.id, created: Date.now() + i, limit: card.limit, target: card.target || 0, date: d,
-                mode: card.mode || 'available', value: round2(v), carried: carriedFor(card, d, null, av), note: '', auto: true, _card: card, _av: av });
+                mode: card.mode || 'available', value: round2(v), carried: carriedFor(card, d, null, av, pt), note: '', auto: true, _card: card, _av: av });
   }
   if (!recs.length) return toast('Enter at least one card');
   recs.forEach(function(r){ var ask = needsStmt(r._card, d); if (ask) recordStmt(r._card, ask, isNaN(r._av) ? 0 : r._av); delete r._card; delete r._av; });
@@ -1152,6 +1217,8 @@ document.addEventListener('click', function(e){
       if (confirm('Delete this check-in?')) { state.checkins = state.checkins.filter(function(c){ return c.id !== sheet.id; }); save(); closeSheet(); render(); toast('Deleted'); }
       break;
     case 'hideInstall': state.ui.hideInstall = true; save(); render(); break;
+    case 'markPaid': state.ui.paidEarly[el.dataset.key] = el.dataset.date; save(); render(); toast('Marked as paid'); break;
+    case 'notPaid': state.ui.paidNo[el.dataset.key] = true; save(); render(); break;
     case 'skipFinal': state.ui.skipFinal[el.dataset.key] = true; save(); render(); break;
     case 'use': state.activeCardId = el.dataset.id; save(); view = 'now'; render(); break;
     case 'addCard': openAddCard(); break;

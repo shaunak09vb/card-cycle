@@ -1,6 +1,6 @@
 {
-  "name": "Card Cycle",
-  "short_name": "Card Cycle",
+  "name": "Weekly Expense Tracker",
+  "short_name": "Expense Tracker",
   "description": "Weekly credit card spending check-ins, per statement cycle.",
   "start_url": "./",
   "scope": "./",

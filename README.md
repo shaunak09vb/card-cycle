@@ -62,7 +62,11 @@ Between a statement closing and the day you pay it, your card balance still incl
 If you set **I pay this card on day** in Settings, the app leaves that bill out of your new spending automatically
 (using the statement total it has on record) and stops doing so from your pay day.
 
-The only time it asks is when it has no record of a statement you haven't paid yet, usually your first week:
+**Paid a statement early?** Between a statement closing and your pay day, the check-in shows a tick box:
+"I've already paid my [dates] statement". Tick it once and the app stops taking that bill off your spending.
+If you saved a check-in without ticking it, the app notices the drop and asks "Did you pay your statement early?"
+
+The only time it asks for an amount is when it has no record of a statement you haven't paid yet, usually your first week:
 it shows one extra box, "[Card] statement balance, [dates]". Type the balance from your statement, or leave it blank if it's paid.
 
 ### Getting an exact final total

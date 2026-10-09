@@ -1,6 +1,6 @@
 // Weekly Expense Tracker service worker: makes the app open offline.
 // When you change any file, bump CACHE (e.g. 'expense-tracker-v2') so phones pick up the new version.
-const CACHE = 'expense-tracker-v7';
+const CACHE = 'expense-tracker-v8';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
