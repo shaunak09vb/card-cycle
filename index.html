@@ -927,7 +927,7 @@ function splitBlockHTML(){
       ? 'Last time (' + fmtD(last.date) + '): ' + (last.amt === 0 ? 'settled up' : (last.amt > 0 ? n + ' owed you ' : 'you owed ' + n + ' ') + money(Math.abs(last.amt))) + '. Update it if it changed, or 0 if you\'re settled up.'
       : 'Copy it from the Splitwise app. Enter 0 if you\'re settled up.') + '</div></label></div>';
 }
-function splitTileHTML(b, today){
+function splitTileHTML(b, today, budget){
   if (!state.split.on) return '';
   var x = latestSplit(today), n = esc(splitName());
   if (!x) return '<div class="ts" style="margin-top:10px">Add your Splitwise balance at your next check-in to see your share.</div>';
@@ -936,7 +936,16 @@ function splitTileHTML(b, today){
   return '<div class="rows" style="margin-top:6px"><div class="row"><span class="k">' + (owed ? n + ' owes you' : 'You owe ' + n) + '<span class="sub">Splitwise, as of ' + fmtD(x.date) + '</span></span>' +
     '<span class="v">' + (owed ? '−' : '+') + money(Math.abs(x.amt)) + '</span></div>' +
     '<div class="row"><span class="k" style="color:var(--text);font-weight:700">' + (owed ? 'Your share once ' + n + ' pays you back' : 'Your total, including what you owe ' + n) + '</span>' +
-    '<span class="v" style="font-size:20px;font-weight:700">' + money(net) + '</span></div></div>';
+    '<span class="v" style="font-size:20px;font-weight:700">' + money(net) + '</span></div></div>' + shareBar(net, budget);
+}
+/* Same budget bar as the card total, but for your share after Splitwise. */
+function shareBar(net, budget){
+  if (!(budget > 0)) return '';
+  var scale = Math.max(budget, net, 1), w = Math.max(0, Math.min(net, scale)) / scale * 100;
+  return '<div class="stack lg" style="margin-top:4px"><span style="width:' + w + '%;background:var(--accent)"></span>' +
+    (net > budget ? '<i style="left:' + Math.min(99.5, budget / scale * 100) + '%"></i>' : '') + '</div>' +
+    '<div class="legend"><span>Your share: ' + Math.round(net / budget * 100) + '% of ' + money(budget) + '</span><span>' +
+    (net <= budget ? money(budget - net) + ' left' : money(net - budget) + ' over') + '</span></div>';
 }
 
 function billsHTML(){
@@ -964,7 +973,7 @@ function billsHTML(){
       '<br><b style="font-weight:600;color:' + (paid ? 'var(--good)' : 'var(--text)') + '">' + (early ? 'Paid early' : (paid ? 'Paid ' : 'Pay ') + fmtD(p.payDate)) + '</b></div></div>';
   }).join('');
   var g = budget > 0 ? billGuide(b, t, budget) : null;
-  h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) + splitTileHTML(b, today) +
+  h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) + splitTileHTML(b, today, budget) +
        (g ? '<div class="status ' + g.tone + '" style="margin-bottom:0"><span class="dot"></span><div>' + g.html + '</div></div>' : '') + '</div></section>';
 
   if (missing.length) h += '<section class="card"><p class="small" style="margin:0">' + missing.map(function(c){ return esc(c.name); }).join(', ') + ' ' + (missing.length === 1 ? 'has' : 'have') +

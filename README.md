@@ -127,7 +127,8 @@ It pre-fills last week's number, so you only change it when it moved.
 
 The **Total to pay** tile then shows the full card payment and, under it, your share:
 total minus what they owe you (or plus what you owe them). The budget bar and weekly guidance still use the full
-card payment, since that's what leaves your bank on the 15th.
+card payment, since that's what leaves your bank on the 15th. A second bar under "Your share" shows what percent of
+your budget you've used once Splitwise is counted.
 
 ## Backups
 
