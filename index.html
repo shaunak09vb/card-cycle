@@ -228,7 +228,7 @@ function cycleLabel(c){ return fmtD(c.start) + ' – ' + fmtD(c.end) + ', ' + c.
 function prevCycle(c, startDay){ return cycleFor(ymd(addDays(c.start, -1)), startDay); }
 
 /* ---------- state ---------- */
-function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], combined:{ budget:0, startDay:null }, ui:{ hideInstall:false, skipFinal:{}, stmtSkip:{}, paidEarly:{}, paidNo:{} } }; }
+function blank(){ return { version:1, cards:[], activeCardId:null, checkins:[], combined:{ budget:0, startDay:null }, split:{ on:false, name:'' }, splits:[], ui:{ hideInstall:false, skipFinal:{}, stmtSkip:{}, paidEarly:{}, paidNo:{} } }; }
 function normalize(s){
   var b = blank();
   if (!s || typeof s !== 'object') return b;
@@ -237,6 +237,8 @@ function normalize(s){
   b.activeCardId = s.activeCardId || null;
   b.ui = Object.assign(b.ui, s.ui || {});
   b.combined = Object.assign(b.combined, s.combined || {});
+  b.split = Object.assign(b.split, s.split || {});
+  b.splits = Array.isArray(s.splits) ? s.splits : [];
   if (!b.ui.skipFinal) b.ui.skipFinal = {};
   if (!b.ui.stmtSkip) b.ui.stmtSkip = {};
   if (!b.ui.paidEarly) b.ui.paidEarly = {};
@@ -540,6 +542,8 @@ function settingsHTML(card){
     (others ? '<section class="card"><div class="label">Combined budget</div><form data-form="combined">' + combinedFields() +
       '<button class="btn primary block" style="margin-top:16px">Save budget</button></form>' +
       '<p class="small muted" style="margin:10px 0 0">Shown on the All cards tab. Clear the amount to turn it off.</p></section>' : '') +
+
+    '<section class="card"><div class="label">Splitwise</div><form data-form="split">' + splitFields() + '<button class="btn primary block" style="margin-top:16px">Save</button></form></section>' +
 
     '<section class="card"><div class="label">Sunday reminder</div><ol class="steps small">' +
     '<li>Open the <b>Reminders</b> app and add “Card check-in”.</li>' +
@@ -900,6 +904,41 @@ function billBar(b, budget){
     '<div class="legend"><span>' + Math.round(b.total / budget * 100) + '% of ' + money(budget) + '</span><span>' + (b.total <= budget ? money(budget - b.total) + ' left' : money(b.total - budget) + ' over') + '</span></div>';
 }
 
+/* ---------- Splitwise balance ----------
+   One household number entered at check-in: positive = they owe you, negative = you owe them. */
+function splitName(){ return (state.split && state.split.name) || 'Partner'; }
+function latestSplit(upto){
+  var l = state.splits.filter(function(x){ return !upto || x.date <= upto; })
+    .sort(function(a, c){ return a.date < c.date ? -1 : a.date > c.date ? 1 : (a.created || 0) - (c.created || 0); });
+  return l[l.length - 1] || null;
+}
+function splitFields(){
+  return '<label class="chk"><input type="checkbox" name="splitOn"' + (state.split.on ? ' checked' : '') + '><span>Add a Splitwise balance to check-ins' +
+    '<span class="hint" style="display:block">For shared expenses on your cards. The payment tile then shows your share once you\'re paid back.</span></span></label>' +
+    '<label class="f">Who you split with<input name="splitName" maxlength="30" autocomplete="off" value="' + esc(state.split.name || '') + '" placeholder="e.g. your partner\'s name"></label>';
+}
+function splitBlockHTML(){
+  var last = latestSplit(), n = esc(splitName());
+  sheet.splitDir = last && last.amt < 0 ? 'iowe' : 'owed';
+  return '<div class="mcard"><div class="mhead"><b>Splitwise</b><span class="muted small">&nbsp;· with ' + n + '</span></div>' +
+    '<div class="seg" data-seg="split"><button type="button" data-dir="owed">' + n + ' owes me</button><button type="button" data-dir="iowe">I owe ' + n + '</button></div>' +
+    '<label class="f">Balance in Splitwise<input name="split" inputmode="decimal" autocomplete="off" placeholder="0.00" value="' + (last ? Math.abs(last.amt) : '') + '">' +
+    '<div class="hint">' + (last
+      ? 'Last time (' + fmtD(last.date) + '): ' + (last.amt === 0 ? 'settled up' : (last.amt > 0 ? n + ' owed you ' : 'you owed ' + n + ' ') + money(Math.abs(last.amt))) + '. Update it if it changed, or 0 if you\'re settled up.'
+      : 'Copy it from the Splitwise app. Enter 0 if you\'re settled up.') + '</div></label></div>';
+}
+function splitTileHTML(b, today){
+  if (!state.split.on) return '';
+  var x = latestSplit(today), n = esc(splitName());
+  if (!x) return '<div class="ts" style="margin-top:10px">Add your Splitwise balance at your next check-in to see your share.</div>';
+  if (x.amt === 0) return '<div class="ts" style="margin-top:10px">Splitwise: settled up with ' + n + ' (as of ' + fmtD(x.date) + ').</div>';
+  var owed = x.amt > 0, net = round2(b.total - x.amt);
+  return '<div class="rows" style="margin-top:6px"><div class="row"><span class="k">' + (owed ? n + ' owes you' : 'You owe ' + n) + '<span class="sub">Splitwise, as of ' + fmtD(x.date) + '</span></span>' +
+    '<span class="v">' + (owed ? '−' : '+') + money(Math.abs(x.amt)) + '</span></div>' +
+    '<div class="row"><span class="k" style="color:var(--text);font-weight:700">' + (owed ? 'Your share once ' + n + ' pays you back' : 'Your total, including what you owe ' + n) + '</span>' +
+    '<span class="v" style="font-size:20px;font-weight:700">' + money(net) + '</span></div></div>';
+}
+
 function billsHTML(){
   var today = todayStr(), t = parseYmd(today), budget = state.combined.budget;
   var h = installBanner();
@@ -925,7 +964,7 @@ function billsHTML(){
       '<br><b style="font-weight:600;color:' + (paid ? 'var(--good)' : 'var(--text)') + '">' + (early ? 'Paid early' : (paid ? 'Paid ' : 'Pay ') + fmtD(p.payDate)) + '</b></div></div>';
   }).join('');
   var g = budget > 0 ? billGuide(b, t, budget) : null;
-  h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) +
+  h += '<div class="card tile total"><div class="tl">' + (dates.length === 1 ? 'Total to pay ' + fmtD(b.payDate) : 'Total for ' + new Date(b.y, b.m, 1).toLocaleDateString('en-CA', { month:'long' }) + ' payments') + '</div><div class="tv">' + money(b.total) + '</div>' + billBar(b, budget) + splitTileHTML(b, today) +
        (g ? '<div class="status ' + g.tone + '" style="margin-bottom:0"><span class="dot"></span><div>' + g.html + '</div></div>' : '') + '</div></section>';
 
   if (missing.length) h += '<section class="card"><p class="small" style="margin:0">' + missing.map(function(c){ return esc(c.name); }).join(', ') + ' ' + (missing.length === 1 ? 'has' : 'have') +
@@ -1094,6 +1133,7 @@ function openMulti(){
         '<div data-ask="' + card.id + '"></div><div data-paid="' + card.id + '"></div>' +
         '<div class="preview small" data-pv="' + card.id + '"></div></div>';
     }).join('') +
+    (state.split.on ? splitBlockHTML() : '') +
     '<div class="preview" id="mtotal" aria-live="polite"></div>' +
     '<button class="btn primary block" style="margin-top:14px">Save check-ins</button>' +
     '<p class="small muted center">Each card uses the reading type set in Settings.</p></form></div>';
@@ -1104,6 +1144,10 @@ function openMulti(){
     updateMulti(f);
   });
   f.addEventListener('change', function(e){ if (e.target.type === 'checkbox') updateMulti(f); });
+  var segBtns = f.querySelectorAll('[data-seg=split] button');
+  var segOn = function(){ segBtns.forEach(function(x){ x.classList.toggle('on', x.dataset.dir === sheet.splitDir); }); };
+  segBtns.forEach(function(x){ x.addEventListener('click', function(){ sheet.splitDir = x.dataset.dir; segOn(); }); });
+  segOn();
   multiAsks(f); updateMulti(f);
 }
 function multiAsks(f){
@@ -1135,7 +1179,7 @@ function updateMulti(f){
     pv.innerHTML = 'Spent this cycle: <b>' + money(spent) + '</b> · ' + (prior.length ? signed(delta) + ' since ' + fmtD(prior[prior.length - 1].date) : 'since ' + fmtD(cyc.start)) +
       ((prior.length && delta < 0) || spent < 0 ? '<div style="color:var(--warn)">' + (pt === false ? 'Lower than last time. Did you pay your statement early? Tick the box above.' : 'Lower than last time — usually a refund.') + '</div>' : '');
   });
-  $('#mtotal').innerHTML = any ? 'Added across cards since each one\'s last check-in: <b>' + money(round2(tot)) + '</b>' : '<span class="muted">Enter at least one card.</span>';
+  $('#mtotal').innerHTML = any ? 'Added across cards since each one\'s last check-in: <b>' + money(round2(tot)) + '</b>' : '<span class="muted">' + (state.split.on ? 'Enter at least one card or your Splitwise balance.' : 'Enter at least one card.') + '</span>';
 }
 function saveMulti(f){
   var d = f.elements.date.value, n = 0;
@@ -1152,10 +1196,23 @@ function saveMulti(f){
     recs.push({ id: uid(), cardId: card.id, created: Date.now() + i, limit: card.limit, target: card.target || 0, date: d,
                 mode: card.mode || 'available', value: round2(v), carried: carriedFor(card, d, null, av, pt), note: '', auto: true, _card: card, _av: av });
   }
-  if (!recs.length) return toast('Enter at least one card');
+  var splitAmt = null;
+  if (state.split.on && f.elements.split) {
+    var sv = parseMoney(f.elements.split.value);
+    if (!isNaN(sv)) {
+      if (sv < 0) return toast('Enter the Splitwise amount without a minus sign');
+      splitAmt = round2(sheet.splitDir === 'iowe' ? -sv : sv) || 0;
+    }
+  }
+  if (!recs.length && splitAmt === null) return toast(state.split.on ? 'Enter at least one card or your Splitwise balance' : 'Enter at least one card');
+  if (splitAmt !== null) {
+    var ls = latestSplit();
+    if (ls && ls.date === d) ls.amt = splitAmt;
+    else state.splits.push({ id: uid(), date: d, amt: splitAmt, created: Date.now() });
+  }
   recs.forEach(function(r){ var ask = needsStmt(r._card, d); if (ask) recordStmt(r._card, ask, isNaN(r._av) ? 0 : r._av); delete r._card; delete r._av; });
   state.checkins = state.checkins.concat(recs); n = recs.length;
-  save(); closeSheet(); render(); toast('Saved ' + n + ' check-in' + (n === 1 ? '' : 's'));
+  save(); closeSheet(); render(); toast(n ? 'Saved ' + n + ' check-in' + (n === 1 ? '' : 's') + (splitAmt !== null ? ' + Splitwise' : '') : 'Splitwise balance saved');
 }
 
 /* ---------- backup ---------- */
@@ -1242,6 +1299,11 @@ document.addEventListener('submit', function(e){
   var f = e.target; e.preventDefault();
   if (f.dataset.form === 'checkin') return saveCheckin(f);
   if (f.dataset.form === 'multi') return saveMulti(f);
+  if (f.dataset.form === 'split') {
+    state.split.on = f.elements.splitOn.checked; state.split.name = f.elements.splitName.value.trim();
+    save(); render(); toast(state.split.on ? 'Splitwise added to check-ins' : 'Splitwise turned off');
+    return;
+  }
   if (f.dataset.form === 'combined') {
     var b = parseMoney(f.elements.budget.value), cs = Math.round(Number(f.elements.cstart.value));
     if (!(cs >= 1 && cs <= 31)) return toast('Budget month day must be 1–31');

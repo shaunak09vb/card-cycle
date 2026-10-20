@@ -119,6 +119,16 @@ the panel moves to the top of the screen.
 **Keep your totals complete:** when a card's statement closes between two Sundays, add a check-in dated its closing day
 (the app nudges you for a week afterwards). Otherwise the days between your last Sunday and the close aren't counted.
 
+## Splitwise balance (shared expenses)
+
+Turn it on in **Settings → Splitwise** and enter who you split with. **Check in all cards** then has a Splitwise box:
+pick "[Name] owes me" or "I owe [Name]" and copy the balance from the Splitwise app (0 when settled up).
+It pre-fills last week's number, so you only change it when it moved.
+
+The **Total to pay** tile then shows the full card payment and, under it, your share:
+total minus what they owe you (or plus what you owe them). The budget bar and weekly guidance still use the full
+card payment, since that's what leaves your bank on the 15th.
+
 ## Backups
 
 Your data lives only in the installed app on your phone. **Deleting the Home Screen icon deletes the data.**
